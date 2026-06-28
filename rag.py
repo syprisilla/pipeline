@@ -1,11 +1,20 @@
 import hashlib
+import json
 import math
+import os
+import urllib.error
+import urllib.request
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 CHROMA_DIR = Path("chroma_db")
 COLLECTION_NAME = "documents"
 EMBEDDING_DIMENSION = 384
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 
 class HashEmbeddingFunction:
@@ -89,6 +98,76 @@ def sync_documents(documents):
         upsert_document(document)
 
 
+def build_context(sources):
+    context_blocks = []
+    for index, source in enumerate(sources, start=1):
+        context_blocks.append(
+            f"[문서 {index}]\n제목: {source['title']}\n내용:\n{source['content']}"
+        )
+    return "\n\n".join(context_blocks)
+
+
+def generate_ai_answer(question, sources):
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError(".env에 GEMINI_API_KEY가 설정되어 있지 않습니다.")
+
+    context = build_context(sources)
+    prompt = (
+        "너는 문서 기반 질의응답 도우미다. "
+        "반드시 제공된 문서 내용만 근거로 한국어로 답변한다. "
+        "문서에 근거가 없으면 모른다고 답한다.\n\n"
+        f"질문:\n{question}\n\n"
+        f"참고 문서:\n{context}\n\n"
+        "위 참고 문서를 근거로 질문에 답변해줘."
+    )
+
+    request_body = {
+        "contents": [
+            {
+                "parts": [{"text": prompt}],
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": 500,
+        },
+    }
+
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{GEMINI_MODEL}:generateContent?key={api_key}"
+    )
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(request_body).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            response_body = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        error_body = error.read().decode("utf-8")
+        raise RuntimeError(f"Gemini API 요청 실패: {error_body}") from error
+    except urllib.error.URLError as error:
+        raise RuntimeError(f"Gemini API 연결 실패: {error.reason}") from error
+
+    candidates = response_body.get("candidates", [])
+    if not candidates:
+        raise RuntimeError("Gemini가 답변을 반환하지 않았습니다.")
+
+    parts = candidates[0].get("content", {}).get("parts", [])
+    answer_parts = [part.get("text", "") for part in parts]
+    answer = "".join(answer_parts).strip()
+
+    if not answer:
+        raise RuntimeError("Gemini 답변이 비어 있습니다.")
+
+    return answer
+
+
 def ask_rag(question, limit=3):
     collection = get_collection()
     result = collection.query(query_texts=[question], n_results=limit)
@@ -115,10 +194,13 @@ def ask_rag(question, limit=3):
             "sources": [],
         }
 
-    answer = (
-        "질문과 가장 관련 있는 문서를 찾았습니다. "
-        "아래 출처 문서의 내용을 바탕으로 답변을 작성하면 됩니다."
-    )
+    try:
+        answer = generate_ai_answer(question, sources)
+    except RuntimeError as error:
+        answer = (
+            "관련 문서는 찾았지만 AI 답변 생성은 아직 완료되지 않았습니다. "
+            f"이유: {error}"
+        )
 
     return {
         "answer": answer,
