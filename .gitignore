@@ -1,0 +1,47 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Local database and runtime files
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Uploaded/generated files
+uploads/
+chroma_db/
+.chroma/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Codex/local agent metadata
+.agents/
+
+# Accidentally cloned nested repository folder
+pipeline/
+
+# Build/test cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+dist/
+build/
+*.egg-info/
