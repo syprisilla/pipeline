@@ -14,6 +14,8 @@ load_dotenv()
 CHROMA_DIR = Path("chroma_db")
 COLLECTION_NAME = "documents"
 EMBEDDING_DIMENSION = 384
+CHUNK_SIZE = 500
+CHUNK_OVERLAP = 100
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 
@@ -46,7 +48,10 @@ class HashEmbeddingFunction:
             return vector
 
         tokens = normalized_text.split()
-        tokens.extend(normalized_text[index : index + 2] for index in range(len(normalized_text) - 1))
+        tokens.extend(
+            normalized_text[index : index + 2]
+            for index in range(len(normalized_text) - 1)
+        )
 
         for token in tokens:
             digest = hashlib.sha256(token.encode("utf-8")).digest()
@@ -75,21 +80,53 @@ def get_collection():
     )
 
 
-def document_to_text(document):
-    return f"제목: {document.title}\n내용: {document.content}"
+def split_text_into_chunks(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
+    if len(text) <= chunk_size:
+        return [text]
+
+    chunks = []
+    start = 0
+
+    while start < len(text):
+        end = start + chunk_size
+        chunk = text[start:end].strip()
+
+        if chunk:
+            chunks.append(chunk)
+
+        if end >= len(text):
+            break
+
+        start = end - overlap
+
+    return chunks
+
+
+def document_to_chunks(document):
+    chunks = split_text_into_chunks(document.content)
+    return [
+        {
+            "id": f"{document.id}-{index}",
+            "text": f"제목: {document.title}\nchunk {index + 1}\n내용: {chunk}",
+            "metadata": {
+                "document_id": document.id,
+                "title": document.title,
+                "chunk_index": index + 1,
+            },
+        }
+        for index, chunk in enumerate(chunks)
+    ]
 
 
 def upsert_document(document):
     collection = get_collection()
+    chunks = document_to_chunks(document)
+
+    collection.delete(where={"document_id": document.id})
     collection.upsert(
-        ids=[str(document.id)],
-        documents=[document_to_text(document)],
-        metadatas=[
-            {
-                "document_id": document.id,
-                "title": document.title,
-            }
-        ],
+        ids=[chunk["id"] for chunk in chunks],
+        documents=[chunk["text"] for chunk in chunks],
+        metadatas=[chunk["metadata"] for chunk in chunks],
     )
 
 
@@ -102,7 +139,10 @@ def build_context(sources):
     context_blocks = []
     for index, source in enumerate(sources, start=1):
         context_blocks.append(
-            f"[문서 {index}]\n제목: {source['title']}\n내용:\n{source['content']}"
+            f"[문서 {index}]\n"
+            f"제목: {source['title']}\n"
+            f"chunk: {source['chunk_index']}\n"
+            f"내용:\n{source['content']}"
         )
     return "\n\n".join(context_blocks)
 
@@ -183,6 +223,7 @@ def ask_rag(question, limit=3):
         sources.append(
             {
                 "title": metadata.get("title", "제목 없음"),
+                "chunk_index": metadata.get("chunk_index", "-"),
                 "content": document_text,
                 "distance": distance,
             }

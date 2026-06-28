@@ -75,6 +75,7 @@
             {% for source in rag_sources %}
               <article class="document-item">
                 <h3>{{ source.title }}</h3>
+                <small>chunk {{ source.chunk_index }}</small>
                 <p>{{ source.content }}</p>
                 {% if source.distance is not none %}
                   <small>거리 점수: {{ "%.4f"|format(source.distance) }}</small>
