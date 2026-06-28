@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
-from models import User
+from models import Document, User
 
 app = FastAPI()
 
@@ -86,8 +86,71 @@ def login(
             {"error": "아이디 또는 비밀번호가 틀렸습니다."},
         )
 
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        {"username": user.username},
+        {
+            "username": user.username,
+            "documents": documents,
+            "keyword": "",
+        },
+    )
+
+
+@app.post("/documents")
+def create_document(
+    request: Request,
+    username: str = Form(...),
+    title: str = Form(...),
+    content: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    new_document = Document(title=title, content=content)
+    db.add(new_document)
+    db.commit()
+
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        {
+            "username": username,
+            "documents": documents,
+            "keyword": "",
+        },
+    )
+
+
+@app.get("/documents/search")
+def search_documents(
+    request: Request,
+    username: str,
+    keyword: str = "",
+    db: Session = Depends(get_db),
+):
+    if keyword:
+        search_word = f"%{keyword}%"
+        documents = (
+            db.query(Document)
+            .filter(
+                (Document.title.like(search_word))
+                | (Document.content.like(search_word))
+            )
+            .order_by(Document.created_at.desc())
+            .all()
+        )
+    else:
+        documents = db.query(Document).order_by(Document.created_at.desc()).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        {
+            "username": username,
+            "documents": documents,
+            "keyword": keyword,
+        },
     )

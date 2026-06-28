@@ -46,6 +46,16 @@ input {
   font-size: 15px;
 }
 
+textarea {
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid #c8d0db;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 15px;
+  resize: vertical;
+}
+
 button,
 .button-link {
   height: 44px;
@@ -75,4 +85,48 @@ button,
   background: #fee2e2;
   color: #991b1b;
   font-size: 14px;
+}
+
+.dashboard-box {
+  width: min(720px, calc(100vw - 32px));
+}
+
+.panel {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.panel h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.document-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.document-item {
+  padding: 14px;
+  border: 1px solid #d6dce5;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.document-item h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.document-item p {
+  margin: 0 0 10px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.document-item small,
+.empty-text {
+  color: #64748b;
 }
