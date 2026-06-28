@@ -43,6 +43,49 @@
       </section>
 
       <section class="panel">
+        <h2>RAG 질문</h2>
+        <form action="/rag/ask" method="post">
+          <input type="hidden" name="username" value="{{ username }}" />
+
+          <label for="question">질문</label>
+          <textarea
+            id="question"
+            name="question"
+            rows="4"
+            placeholder="저장된 문서에 대해 질문하세요"
+            required
+          >{{ rag_question }}</textarea>
+
+          <button type="submit">관련 문서 찾기</button>
+        </form>
+
+        {% if rag_error %}
+          <p class="error">{{ rag_error }}</p>
+        {% endif %}
+
+        {% if rag_answer %}
+          <div class="rag-answer">
+            <h3>RAG 결과</h3>
+            <p>{{ rag_answer }}</p>
+          </div>
+        {% endif %}
+
+        {% if rag_sources %}
+          <div class="document-list">
+            {% for source in rag_sources %}
+              <article class="document-item">
+                <h3>{{ source.title }}</h3>
+                <p>{{ source.content }}</p>
+                {% if source.distance is not none %}
+                  <small>거리 점수: {{ "%.4f"|format(source.distance) }}</small>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="panel">
         <h2>문서 목록</h2>
 
         {% if documents %}

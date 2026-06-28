@@ -80,6 +80,7 @@ button,
 }
 
 .error {
+  margin: 12px 0 0;
   padding: 10px;
   border-radius: 6px;
   background: #fee2e2;
@@ -129,4 +130,22 @@ button,
 .document-item small,
 .empty-text {
   color: #64748b;
+}
+
+.rag-answer {
+  margin: 16px 0 12px;
+  padding: 14px;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  background: #f0fdf4;
+}
+
+.rag-answer h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.rag-answer p {
+  margin: 0;
+  line-height: 1.5;
 }

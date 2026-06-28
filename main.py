@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
 from models import Document, User
+from rag import ask_rag, sync_documents, upsert_document
 
 app = FastAPI()
 
@@ -13,6 +14,26 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 Base.metadata.create_all(bind=engine)
+
+
+def dashboard_context(
+    username,
+    documents,
+    keyword="",
+    rag_question="",
+    rag_answer="",
+    rag_sources=None,
+    rag_error=None,
+):
+    return {
+        "username": username,
+        "documents": documents,
+        "keyword": keyword,
+        "rag_question": rag_question,
+        "rag_answer": rag_answer,
+        "rag_sources": rag_sources or [],
+        "rag_error": rag_error,
+    }
 
 
 @app.get("/")
@@ -91,11 +112,7 @@ def login(
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        {
-            "username": user.username,
-            "documents": documents,
-            "keyword": "",
-        },
+        dashboard_context(user.username, documents),
     )
 
 
@@ -110,17 +127,20 @@ def create_document(
     new_document = Document(title=title, content=content)
     db.add(new_document)
     db.commit()
+    db.refresh(new_document)
+
+    rag_error = None
+    try:
+        upsert_document(new_document)
+    except RuntimeError as error:
+        rag_error = str(error)
 
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
 
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        {
-            "username": username,
-            "documents": documents,
-            "keyword": "",
-        },
+        dashboard_context(username, documents, rag_error=rag_error),
     )
 
 
@@ -148,9 +168,39 @@ def search_documents(
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        {
-            "username": username,
-            "documents": documents,
-            "keyword": keyword,
-        },
+        dashboard_context(username, documents, keyword=keyword),
+    )
+
+
+@app.post("/rag/ask")
+def ask_document_question(
+    request: Request,
+    username: str = Form(...),
+    question: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    rag_answer = ""
+    rag_sources = []
+    rag_error = None
+
+    try:
+        sync_documents(documents)
+        rag_result = ask_rag(question)
+        rag_answer = rag_result["answer"]
+        rag_sources = rag_result["sources"]
+    except RuntimeError as error:
+        rag_error = str(error)
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        dashboard_context(
+            username,
+            documents,
+            rag_question=question,
+            rag_answer=rag_answer,
+            rag_sources=rag_sources,
+            rag_error=rag_error,
+        ),
     )
