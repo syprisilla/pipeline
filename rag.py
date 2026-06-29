@@ -17,6 +17,7 @@ EMBEDDING_DIMENSION = 384
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 100
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+RAG_RESULT_LIMIT = 5
 
 
 class HashEmbeddingFunction:
@@ -154,12 +155,14 @@ def generate_ai_answer(question, sources):
 
     context = build_context(sources)
     prompt = (
-        "너는 문서 기반 질의응답 도우미다. "
-        "반드시 제공된 문서 내용만 근거로 한국어로 답변한다. "
-        "문서에 근거가 없으면 모른다고 답한다.\n\n"
+        "너는 문서 기반 질의응답 도우미다.\n"
+        "반드시 제공된 참고 문서 내용만 근거로 한국어로 답변한다.\n"
+        "마크다운 문법, 별표, 제목 기호는 사용하지 않는다.\n"
+        "답변은 자연스러운 문단으로 작성하고, 질문이 설명을 요구하면 핵심 개념과 특징을 함께 설명한다.\n"
+        "문서에 근거가 부족하면 어떤 부분이 부족한지 말한다.\n\n"
         f"질문:\n{question}\n\n"
         f"참고 문서:\n{context}\n\n"
-        "위 참고 문서를 근거로 질문에 답변해줘."
+        "위 참고 문서를 근거로 완성된 답변을 작성해줘."
     )
 
     request_body = {
@@ -170,7 +173,7 @@ def generate_ai_answer(question, sources):
         ],
         "generationConfig": {
             "temperature": 0.2,
-            "maxOutputTokens": 500,
+            "maxOutputTokens": 1200,
         },
     }
 
@@ -198,6 +201,7 @@ def generate_ai_answer(question, sources):
     if not candidates:
         raise RuntimeError("Gemini가 답변을 반환하지 않았습니다.")
 
+    finish_reason = candidates[0].get("finishReason")
     parts = candidates[0].get("content", {}).get("parts", [])
     answer_parts = [part.get("text", "") for part in parts]
     answer = "".join(answer_parts).strip()
@@ -205,10 +209,13 @@ def generate_ai_answer(question, sources):
     if not answer:
         raise RuntimeError("Gemini 답변이 비어 있습니다.")
 
+    if finish_reason == "MAX_TOKENS":
+        answer += "\n\n답변이 길어져 일부가 생략되었습니다. 질문 범위를 조금 좁히면 더 완성된 답변을 받을 수 있습니다."
+
     return answer
 
 
-def ask_rag(question, limit=3):
+def ask_rag(question, limit=RAG_RESULT_LIMIT):
     collection = get_collection()
     result = collection.query(query_texts=[question], n_results=limit)
 

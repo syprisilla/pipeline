@@ -65,7 +65,7 @@
         <header class="create-header">
           <a class="create-back" href="/dashboard?username={{ username }}">메인으로</a>
           <h2>문서 등록</h2>
-          <p>직접 작성하거나 PDF, 이미지, 텍스트 파일을 첨부해 문서를 저장하세요.</p>
+          <p>직접 작성하거나 PDF, TXT, Markdown 파일을 첨부해 문서를 저장하세요.</p>
         </header>
 
         <div class="create-content">
@@ -81,7 +81,7 @@
 
             <div class="create-field">
               <label for="title">제목</label>
-              <input id="title" name="title" type="text" placeholder="문서 제목을 입력하세요" required />
+              <input id="title" name="title" type="text" placeholder="문서 제목을 입력하세요" />
             </div>
 
             <div class="create-field">
@@ -91,7 +91,6 @@
                 name="content"
                 rows="10"
                 placeholder="문서 내용을 직접 입력하세요"
-                required
               ></textarea>
             </div>
 
@@ -103,9 +102,9 @@
                   name="attachments"
                   type="file"
                   multiple
-                  accept=".pdf,.txt,.md,.doc,.docx,.png,.jpg,.jpeg"
+                  accept=".pdf,.txt,.md"
                 />
-                <span>PDF, 이미지, 텍스트 파일을 선택할 수 있습니다.</span>
+                <span>PDF, TXT, Markdown 파일을 선택할 수 있습니다.</span>
               </div>
             </div>
 
@@ -198,7 +197,7 @@
           <article class="rag-answer-card">
             <span class="rag-label">Answer</span>
             <h3>RAG 결과</h3>
-            <p>{{ rag_answer }}</p>
+            <div class="rag-answer-text">{{ rag_answer }}</div>
           </article>
           {% else %}
           <article class="rag-empty-card">

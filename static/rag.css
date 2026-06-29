@@ -134,10 +134,16 @@
 }
 
 .rag-answer-card p,
+.rag-answer-text,
 .rag-empty-card p {
   margin: 0;
   color: var(--rag-muted);
   line-height: 1.7;
+}
+
+.rag-answer-text {
+  white-space: pre-wrap;
+  word-break: keep-all;
 }
 
 .rag-error {
