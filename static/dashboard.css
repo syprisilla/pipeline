@@ -1,0 +1,410 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #f5f6f8;
+  color: #172033;
+  font-family: Arial, sans-serif;
+}
+
+.dashboard-shell {
+  width: min(1600px, calc(100vw - 96px));
+  margin: 48px auto;
+}
+
+.dashboard-home {
+  width: min(1440px, calc(100vw - 96px));
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 32px;
+  padding: 42px 48px;
+  border: 1px solid #d8e1ef;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 12px;
+  font-size: 42px;
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: 26px;
+}
+
+.welcome {
+  margin-bottom: 0;
+  color: #667085;
+  font-size: 17px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.menu-card {
+  min-height: 260px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #d8e1ef;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #172033;
+  text-decoration: none;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.menu-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 22px 60px rgba(37, 99, 235, 0.14);
+  transform: translateY(-2px);
+}
+
+.menu-card strong {
+  font-size: 30px;
+}
+
+.menu-card small {
+  color: #667085;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.menu-icon {
+  width: 64px;
+  height: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.panel {
+  padding: 42px 48px;
+  border: 1px solid #d8e1ef;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.compose-panel {
+  padding: 34px 40px 42px;
+  border-radius: 0;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compose-form {
+  gap: 18px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+label {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.form-row > label {
+  padding-top: 12px;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid #c8d0db;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #172033;
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+input {
+  height: 46px;
+  padding: 0 14px;
+}
+
+textarea {
+  min-height: 150px;
+  padding: 14px;
+  resize: vertical;
+}
+
+.editor-row textarea {
+  min-height: 220px;
+}
+
+.file-upload-box {
+  min-height: 190px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 12px;
+  border: 2px dashed #b8c3d6;
+  border-radius: 8px;
+  background: #fafbfc;
+  text-align: left;
+}
+
+.file-upload-box input[type="file"] {
+  width: 100%;
+  height: auto;
+  padding: 16px;
+  border: 1px solid #c8d0db;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 16px;
+}
+
+.file-upload-box p {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+  text-align: right;
+}
+
+.form-actions {
+  margin-left: 140px;
+  display: flex;
+  gap: 8px;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+button,
+.button-link,
+.ghost-link,
+.secondary-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button,
+.button-link {
+  margin-top: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
+}
+
+button:hover,
+.button-link:hover {
+  background: #1d4ed8;
+}
+
+.ghost-link {
+  padding: 0 14px;
+  border: 1px solid #d8e1ef;
+  background: #ffffff;
+  color: #2563eb;
+  white-space: nowrap;
+}
+
+.ghost-link:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.secondary-link {
+  padding: 0 16px;
+  border: 1px solid #cfd5df;
+  background: #ffffff;
+  color: #4b5563;
+}
+
+.secondary-link:hover {
+  background: #f3f4f6;
+}
+
+.success,
+.error {
+  margin: 0 0 16px;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.result-block {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.document-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.document-item {
+  padding: 16px;
+  border: 1px solid #d8e1ef;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.document-item h3 {
+  margin-bottom: 8px;
+  font-size: 17px;
+}
+
+.document-item p {
+  margin-bottom: 10px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.document-item small,
+.empty-text {
+  color: #64748b;
+}
+
+.rag-answer {
+  margin: 20px 0 0;
+  padding: 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #eff6ff;
+}
+
+.rag-answer h3 {
+  margin-bottom: 8px;
+  font-size: 17px;
+}
+
+.rag-answer p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+@media (max-width: 720px) {
+  .dashboard-shell,
+  .dashboard-home {
+    width: min(100% - 24px, 960px);
+    margin: 24px auto;
+  }
+
+  .dashboard-header,
+  .panel-heading {
+    flex-direction: column;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .form-row > label {
+    padding-top: 0;
+  }
+
+  .form-actions {
+    margin-left: 0;
+  }
+
+  .menu-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-card {
+    min-height: 170px;
+    padding: 24px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+}

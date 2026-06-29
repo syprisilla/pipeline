@@ -3,35 +3,126 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>대시보드</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <title>문서 검색 서비스</title>
+    <link rel="stylesheet" href="/static/dashboard.css" />
   </head>
   <body>
-    <main class="auth-box dashboard-box">
-      <h1>문서 검색 서비스</h1>
-      <p class="welcome">{{ username }}님 환영합니다.</p>
+    <main class="dashboard-shell dashboard-{{ active_view }}">
+      {% if active_view == "home" %}
+      <header class="dashboard-header">
+        <div>
+          <p class="eyebrow">RAG Document Search</p>
+          <h1>문서 검색 서비스</h1>
+          <p class="welcome">{{ username }}님, 원하는 작업을 선택하세요.</p>
+        </div>
+        <a class="ghost-link" href="/login">로그아웃</a>
+      </header>
+      {% endif %}
 
-      <section class="panel">
-        <h2>문서 등록</h2>
-        <form action="/documents" method="post">
+      {% if active_view == "home" %}
+      <section class="menu-grid" aria-label="문서 검색 서비스 메뉴">
+        <a class="menu-card" href="/documents/new?username={{ username }}">
+          <span class="menu-icon">+</span>
+          <strong>문서 등록</strong>
+          <small>새 문서 제목과 내용을 저장합니다.</small>
+        </a>
+
+        <a
+          class="menu-card"
+          href="/documents/search-page?username={{ username }}"
+        >
+          <span class="menu-icon">⌕</span>
+          <strong>문서 검색</strong>
+          <small>저장된 문서에서 키워드를 찾습니다.</small>
+        </a>
+
+        <a class="menu-card" href="/rag?username={{ username }}">
+          <span class="menu-icon">?</span>
+          <strong>RAG 질문</strong>
+          <small>문서를 바탕으로 질문에 답합니다.</small>
+        </a>
+
+        <a class="menu-card" href="/documents/list?username={{ username }}">
+          <span class="menu-icon">≡</span>
+          <strong>문서 목록</strong>
+          <small>저장된 모든 문서를 확인합니다.</small>
+        </a>
+      </section>
+      {% endif %} {% if active_view == "create" %}
+      <section class="panel feature-panel compose-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Create</p>
+            <h2>문서 등록</h2>
+          </div>
+          <a class="ghost-link" href="/dashboard?username={{ username }}"
+            >메인으로</a
+          >
+        </div>
+
+        {% if message %}
+        <p class="success">{{ message }}</p>
+        {% endif %} {% if rag_error %}
+        <p class="error">{{ rag_error }}</p>
+        {% endif %}
+
+        <form action="/documents" method="post" enctype="multipart/form-data" class="compose-form">
           <input type="hidden" name="username" value="{{ username }}" />
 
-          <label for="title">제목</label>
-          <input id="title" name="title" type="text" required />
+          <div class="form-row">
+            <label for="title">제목</label>
+            <input id="title" name="title" type="text" required />
+          </div>
 
-          <label for="content">내용</label>
-          <textarea id="content" name="content" rows="6" required></textarea>
+          <div class="form-row editor-row">
+            <label for="content">직접 작성</label>
+            <textarea
+              id="content"
+              name="content"
+              rows="10"
+              placeholder="문서 내용을 직접 입력하세요"
+              required
+            ></textarea>
+          </div>
 
-          <button type="submit">문서 저장</button>
+          <div class="form-row attachment-row">
+            <label for="attachments">첨부파일</label>
+            <div class="file-upload-box">
+              <input
+                id="attachments"
+                name="attachments"
+                type="file"
+                multiple
+                accept=".pdf,.txt,.md,.doc,.docx,.png,.jpg,.jpeg"
+              />
+              <p>PDF, 이미지, 텍스트 파일을 선택할 수 있습니다.</p>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit">문서 저장</button>
+            <a class="secondary-link" href="/dashboard?username={{ username }}">취소</a>
+          </div>
         </form>
       </section>
+      {% endif %} {% if active_view == "search" %}
+      <section class="panel feature-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Search</p>
+            <h2>문서 검색</h2>
+          </div>
+          <a class="ghost-link" href="/dashboard?username={{ username }}"
+            >메인으로</a
+          >
+        </div>
 
-      <section class="panel">
-        <h2>문서 검색</h2>
         <form action="/documents/search" method="get">
           <input type="hidden" name="username" value="{{ username }}" />
 
+          <label for="keyword">검색어</label>
           <input
+            id="keyword"
             name="keyword"
             type="text"
             placeholder="검색어를 입력하세요"
@@ -40,10 +131,38 @@
 
           <button type="submit">검색</button>
         </form>
-      </section>
 
-      <section class="panel">
-        <h2>RAG 질문</h2>
+        {% if keyword %}
+        <div class="result-block">
+          <h3>검색 결과</h3>
+          {% if documents %}
+          <div class="document-list">
+            {% for document in documents %}
+            <article class="document-item">
+              <h3>{{ document.title }}</h3>
+              <p>{{ document.content }}</p>
+              <small>{{ document.created_at }}</small>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="empty-text">검색 결과가 없습니다.</p>
+          {% endif %}
+        </div>
+        {% endif %}
+      </section>
+      {% endif %} {% if active_view == "rag" %}
+      <section class="panel feature-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Ask</p>
+            <h2>RAG 질문</h2>
+          </div>
+          <a class="ghost-link" href="/dashboard?username={{ username }}"
+            >메인으로</a
+          >
+        </div>
+
         <form action="/rag/ask" method="post">
           <input type="hidden" name="username" value="{{ username }}" />
 
@@ -51,60 +170,68 @@
           <textarea
             id="question"
             name="question"
-            rows="4"
+            rows="5"
             placeholder="저장된 문서에 대해 질문하세요"
             required
-          >{{ rag_question }}</textarea>
+          >
+{{ rag_question }}</textarea
+          >
 
           <button type="submit">관련 문서 찾기</button>
         </form>
 
         {% if rag_error %}
-          <p class="error">{{ rag_error }}</p>
-        {% endif %}
-
-        {% if rag_answer %}
-          <div class="rag-answer">
-            <h3>RAG 결과</h3>
-            <p>{{ rag_answer }}</p>
-          </div>
-        {% endif %}
-
-        {% if rag_sources %}
+        <p class="error">{{ rag_error }}</p>
+        {% endif %} {% if rag_answer %}
+        <div class="rag-answer">
+          <h3>RAG 결과</h3>
+          <p>{{ rag_answer }}</p>
+        </div>
+        {% endif %} {% if rag_sources %}
+        <div class="result-block">
+          <h3>참고 문서</h3>
           <div class="document-list">
             {% for source in rag_sources %}
-              <article class="document-item">
-                <h3>{{ source.title }}</h3>
-                <small>chunk {{ source.chunk_index }}</small>
-                <p>{{ source.content }}</p>
-                {% if source.distance is not none %}
-                  <small>거리 점수: {{ "%.4f"|format(source.distance) }}</small>
-                {% endif %}
-              </article>
+            <article class="document-item">
+              <h3>{{ source.title }}</h3>
+              <small>chunk {{ source.chunk_index }}</small>
+              <p>{{ source.content }}</p>
+              {% if source.distance is not none %}
+              <small>거리 점수: {{ "%.4f"|format(source.distance) }}</small>
+              {% endif %}
+            </article>
             {% endfor %}
           </div>
+        </div>
         {% endif %}
       </section>
-
-      <section class="panel">
-        <h2>문서 목록</h2>
+      {% endif %} {% if active_view == "list" %}
+      <section class="panel feature-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Archive</p>
+            <h2>문서 목록</h2>
+          </div>
+          <a class="ghost-link" href="/dashboard?username={{ username }}"
+            >메인으로</a
+          >
+        </div>
 
         {% if documents %}
-          <div class="document-list">
-            {% for document in documents %}
-              <article class="document-item">
-                <h3>{{ document.title }}</h3>
-                <p>{{ document.content }}</p>
-                <small>{{ document.created_at }}</small>
-              </article>
-            {% endfor %}
-          </div>
+        <div class="document-list">
+          {% for document in documents %}
+          <article class="document-item">
+            <h3>{{ document.title }}</h3>
+            <p>{{ document.content }}</p>
+            <small>{{ document.created_at }}</small>
+          </article>
+          {% endfor %}
+        </div>
         {% else %}
-          <p class="empty-text">등록된 문서가 없습니다.</p>
+        <p class="empty-text">등록된 문서가 없습니다.</p>
         {% endif %}
       </section>
-
-      <a class="button-link" href="/login">로그인 화면으로 돌아가기</a>
+      {% endif %}
     </main>
   </body>
 </html>

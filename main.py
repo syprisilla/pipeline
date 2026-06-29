@@ -19,20 +19,24 @@ Base.metadata.create_all(bind=engine)
 def dashboard_context(
     username,
     documents,
+    active_view="home",
     keyword="",
     rag_question="",
     rag_answer="",
     rag_sources=None,
     rag_error=None,
+    message=None,
 ):
     return {
         "username": username,
         "documents": documents,
+        "active_view": active_view,
         "keyword": keyword,
         "rag_question": rag_question,
         "rag_answer": rag_answer,
         "rag_sources": rag_sources or [],
         "rag_error": rag_error,
+        "message": message,
     }
 
 
@@ -116,6 +120,81 @@ def login(
     )
 
 
+@app.get("/dashboard")
+def dashboard_page(
+    request: Request,
+    username: str,
+    db: Session = Depends(get_db),
+):
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        dashboard_context(username, documents),
+    )
+
+
+@app.get("/documents/new")
+def new_document_page(
+    request: Request,
+    username: str,
+    db: Session = Depends(get_db),
+):
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        dashboard_context(username, documents, active_view="create"),
+    )
+
+
+@app.get("/documents/search-page")
+def search_document_page(
+    request: Request,
+    username: str,
+    db: Session = Depends(get_db),
+):
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        dashboard_context(username, documents, active_view="search"),
+    )
+
+
+@app.get("/rag")
+def rag_page(
+    request: Request,
+    username: str,
+    db: Session = Depends(get_db),
+):
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        dashboard_context(username, documents, active_view="rag"),
+    )
+
+
+@app.get("/documents/list")
+def document_list_page(
+    request: Request,
+    username: str,
+    db: Session = Depends(get_db),
+):
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        dashboard_context(username, documents, active_view="list"),
+    )
+
+
 @app.post("/documents")
 def create_document(
     request: Request,
@@ -140,7 +219,13 @@ def create_document(
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        dashboard_context(username, documents, rag_error=rag_error),
+        dashboard_context(
+            username,
+            documents,
+            active_view="create",
+            rag_error=rag_error,
+            message="문서가 저장되었습니다.",
+        ),
     )
 
 
@@ -168,7 +253,7 @@ def search_documents(
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        dashboard_context(username, documents, keyword=keyword),
+        dashboard_context(username, documents, active_view="search", keyword=keyword),
     )
 
 
@@ -198,6 +283,7 @@ def ask_document_question(
         dashboard_context(
             username,
             documents,
+            active_view="rag",
             rag_question=question,
             rag_answer=rag_answer,
             rag_sources=rag_sources,

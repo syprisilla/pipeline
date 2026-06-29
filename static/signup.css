@@ -26,9 +26,9 @@ body {
 
 .auth-page {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 28px 16px;
+  padding: 80px 16px 28px;
   background:
     linear-gradient(135deg, rgba(37, 99, 235, 0.08), transparent 36%),
     linear-gradient(315deg, rgba(20, 184, 166, 0.1), transparent 40%),
@@ -39,7 +39,7 @@ body {
 }
 
 .auth-section {
-  width: min(430px, 100%);
+  width: min(520px, 100%);
 }
 
 .trans-wrapper {
@@ -121,7 +121,8 @@ body {
 .card-wrapper {
   position: relative;
   width: 100%;
-  min-height: 430px;
+  aspect-ratio: 10 / 11;
+  min-height: auto;
   margin: 22px auto 0;
   perspective: 1000px;
 }
@@ -142,8 +143,9 @@ body {
   position: absolute;
   inset: 0;
   width: 100%;
-  min-height: 430px;
-  padding: 34px 30px;
+  height: 100%;
+  min-height: auto;
+  padding: 32px 24px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.94);
@@ -157,7 +159,7 @@ body {
 .card-signup h4 {
   margin: 0 0 24px;
   color: var(--ink);
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 800;
   text-align: center;
 }
@@ -182,7 +184,7 @@ body {
 
 .form-style {
   width: 100%;
-  height: 50px;
+  height: 48px;
   margin-bottom: 16px;
   padding: 0 16px;
   border: 1px solid var(--line);
@@ -192,7 +194,10 @@ body {
   color: var(--ink);
   font-size: 15px;
   font-weight: 500;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
 .form-style:focus {
@@ -207,7 +212,7 @@ body {
 
 .auth-page button {
   width: 100%;
-  height: 48px;
+  height: 45px;
   margin-top: 8px;
   display: flex;
   align-items: center;
@@ -221,7 +226,10 @@ body {
   font-size: 15px;
   font-weight: 800;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .auth-page button:hover {
