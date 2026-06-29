@@ -8,8 +8,8 @@
 <section class="create-container">
   <header class="create-header">
     <a class="create-back" href="/dashboard?username={{ username }}">메인으로</a>
-    <h2>문서 등록</h2>
-    <p>직접 작성하거나 PDF, TXT, Markdown 파일을 첨부해 문서를 저장하세요.</p>
+    <h2>공공데이터 수집</h2>
+    <p>공공데이터 설명, CSV, PDF, TXT, Markdown 파일을 저장하고 RAG 검색용 텍스트로 색인하세요.</p>
   </header>
 
   <div class="create-content">
@@ -39,22 +39,22 @@
       </div>
 
       <div class="create-field">
-        <label for="title">제목</label>
+        <label for="title">데이터명</label>
         <input
           id="title"
           name="title"
           type="text"
-          placeholder="문서 제목을 입력하세요"
+          placeholder="예: 서울시 대기질 측정 정보"
         />
       </div>
 
       <div class="create-field">
-        <label for="content">직접 작성</label>
+        <label for="content">전처리 텍스트</label>
         <textarea
           id="content"
           name="content"
           rows="10"
-          placeholder="문서 내용을 직접 입력하세요"
+          placeholder="수집 출처, 컬럼 의미, 전처리 방식, 분석에 필요한 설명을 입력하세요"
         ></textarea>
       </div>
 
@@ -66,14 +66,14 @@
             name="attachments"
             type="file"
             multiple
-            accept=".pdf,.txt,.md"
+            accept=".pdf,.txt,.md,.csv"
           />
-          <span>PDF, TXT, Markdown 파일을 선택할 수 있습니다.</span>
+          <span>CSV, PDF, TXT, Markdown 파일을 선택할 수 있습니다.</span>
         </div>
       </div>
 
       <div class="create-actions">
-        <button type="submit">문서 저장</button>
+        <button type="submit">데이터 저장</button>
         <a href="/dashboard?username={{ username }}">취소</a>
       </div>
     </form>

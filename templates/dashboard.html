@@ -3,36 +3,61 @@
 {% block content %}
 <header class="dashboard-header">
   <div>
-    <p class="eyebrow">RAG Document Search</p>
-    <h1>문서 검색 서비스</h1>
-    <p class="welcome">{{ username }}님, 원하는 작업을 선택하세요.</p>
+    <p class="eyebrow">Public Data RAG Workflow</p>
+    <h1>공공데이터 수집·EDA·Agent 서비스</h1>
+    <p class="welcome">{{ username }}님, 데이터 수집부터 VectorDB 기반 응답까지 전체 흐름을 확인하세요.</p>
   </div>
   <a class="ghost-link" href="/login">로그아웃</a>
 </header>
 
+<section class="metric-grid" aria-label="현재 저장 상태">
+  <article>
+    <span>수집 데이터</span>
+    <strong>{{ pipeline_stats.source_count|default(0) }}</strong>
+  </article>
+  <article>
+    <span>VectorDB 색인</span>
+    <strong>{{ pipeline_stats.vector_count|default(0) }}</strong>
+  </article>
+  <article>
+    <span>DB Table</span>
+    <strong>{{ pipeline_stats.table_count|default(1) }}</strong>
+  </article>
+  <article>
+    <span>CSV 파일</span>
+    <strong>{{ pipeline_stats.csv_count|default(0) }}</strong>
+  </article>
+</section>
+
 <section class="menu-grid" aria-label="문서 검색 서비스 메뉴">
   <a class="menu-card" href="/documents/new?username={{ username }}">
     <span class="menu-icon">+</span>
-    <strong>문서 등록</strong>
-    <small>새 문서 제목과 내용을 저장합니다.</small>
+    <strong>데이터 수집</strong>
+    <small>공공데이터 파일과 설명 텍스트를 DB에 저장하고 VectorDB 색인을 준비합니다.</small>
   </a>
 
   <a class="menu-card" href="/documents/search-page?username={{ username }}">
     <span class="menu-icon">⌕</span>
-    <strong>문서 검색</strong>
-    <small>저장된 문서에서 키워드를 찾습니다.</small>
+    <strong>저장 데이터 검색</strong>
+    <small>DB table에 저장된 원천 데이터와 전처리 텍스트를 키워드로 확인합니다.</small>
+  </a>
+
+  <a class="menu-card" href="/eda?username={{ username }}">
+    <span class="menu-icon">↗</span>
+    <strong>CSV 분석 선택</strong>
+    <small>CSV를 고른 뒤 전처리 점검 또는 EDA 탐색 화면으로 이동합니다.</small>
   </a>
 
   <a class="menu-card" href="/rag?username={{ username }}">
     <span class="menu-icon">?</span>
-    <strong>RAG 질문</strong>
-    <small>문서를 바탕으로 질문에 답합니다.</small>
+    <strong>Agent 질문</strong>
+    <small>질문을 VectorDB 관련 문서와 매칭한 뒤 LLM 답변으로 생성합니다.</small>
   </a>
 
   <a class="menu-card" href="/documents/list?username={{ username }}">
     <span class="menu-icon">≡</span>
-    <strong>문서 목록</strong>
-    <small>저장된 모든 문서를 확인합니다.</small>
+    <strong>저장소 확인</strong>
+    <small>DB table에 저장된 전체 데이터 목록과 카테고리를 점검합니다.</small>
   </a>
 
   <a class="menu-card" href="/categories?username={{ username }}">
@@ -50,7 +75,7 @@
       </svg>
     </span>
     <strong>카테고리 관리</strong>
-    <small>카테고리를 만들고 문서를 분류합니다.</small>
+    <small>수집 출처, 데이터 유형, 분석 주제별로 자료를 분류합니다.</small>
   </a>
 </section>
 {% endblock %}

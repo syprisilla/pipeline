@@ -24,6 +24,9 @@ ENV/
 uploads/
 chroma_db/
 .chroma/
+data_files/*
+!data_files/.gitkeep
+.matplotlib_cache/
 
 # Editor and OS files
 .vscode/

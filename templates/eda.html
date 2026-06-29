@@ -1,0 +1,170 @@
+{% extends "dashboard_base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/eda.css" />
+{% endblock %}
+
+{% block content %}
+<section class="eda-container">
+  <header class="eda-header">
+    <a class="eda-back" href="{% if selected_document %}/eda/{{ selected_document.id }}?username={{ username }}{% else %}/dashboard?username={{ username }}{% endif %}">
+      {% if selected_document %}분석 선택으로{% else %}메인으로{% endif %}
+    </a>
+    <h2>{% if selected_document %}{{ selected_document.title }} 분석{% else %}EDA 시각화{% endif %}</h2>
+    <p>전처리된 CSV의 주요 수치 변수, 날짜별 변화, 요일별 패턴, 변수 간 관계를 탐색합니다.</p>
+  </header>
+
+  <div class="eda-content">
+    {% if error %}
+    <p class="eda-error">{{ error }}</p>
+    {% endif %}
+
+    {% if not selected_document %}
+    <section class="eda-metrics" aria-label="EDA 요약 지표">
+      <article>
+        <span>저장 데이터</span>
+        <strong>{{ pipeline_stats.source_count|default(0) }}</strong>
+      </article>
+      <article>
+        <span>DB Table</span>
+        <strong>{{ pipeline_stats.table_count|default(1) }}</strong>
+      </article>
+      <article>
+        <span>텍스트 문자 수</span>
+        <strong>{{ pipeline_stats.total_chars|default(0) }}</strong>
+      </article>
+      <article>
+        <span>CSV 자료</span>
+        <strong>{{ pipeline_stats.csv_count|default(0) }}</strong>
+      </article>
+    </section>
+    {% endif %}
+
+    {% if not selected_document %}
+    <section class="csv-file-section" aria-label="CSV 파일 선택">
+      <div class="eda-section-title">
+        <div>
+          <span>CSV Files</span>
+          <h3>분석할 CSV 선택</h3>
+        </div>
+        <a href="/documents/new?username={{ username }}">데이터 수집</a>
+      </div>
+
+      {% if csv_documents %}
+      <div class="csv-file-grid">
+        {% for csv_document in csv_documents %}
+        <a
+          class="csv-file-card {% if selected_document and selected_document.id == csv_document.id %}active{% endif %}"
+          href="/eda/{{ csv_document.id }}?username={{ username }}"
+        >
+          <div>
+            <strong>{{ csv_document.title }}</strong>
+            <small>{{ csv_document.created_at }}</small>
+          </div>
+          <span>분석 보기</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <article class="eda-empty">
+        <h3>분석할 CSV가 없습니다</h3>
+        <p>먼저 공공데이터 수집 화면에서 CSV 파일을 업로드하세요.</p>
+        <a href="/documents/new?username={{ username }}">데이터 수집하기</a>
+      </article>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if selected_document and eda_charts %}
+    <section class="eda-chart-grid" aria-label="matplotlib 시각화 결과">
+      {% if eda_charts.csv_numeric %}
+      <article class="eda-chart-card wide">
+        <h3>주요 수치 변수 평균/최댓값</h3>
+        <img src="{{ eda_charts.csv_numeric }}" alt="CSV 숫자 컬럼 평균과 최댓값 그래프" />
+        {% if eda_charts.csv_numeric_note %}
+        <p>{{ eda_charts.csv_numeric_note }}</p>
+        {% endif %}
+      </article>
+      {% endif %}
+
+      {% if eda_charts.csv_time %}
+      <article class="eda-chart-card wide">
+        <h3>날짜 기준 주요 수치 변화</h3>
+        <img src="{{ eda_charts.csv_time }}" alt="CSV 날짜 컬럼 기준 수치 추이 그래프" />
+        {% if eda_charts.csv_time_note %}
+        <p>{{ eda_charts.csv_time_note }}</p>
+        {% endif %}
+      </article>
+      {% endif %}
+
+      {% if eda_charts.csv_weekday %}
+      <article class="eda-chart-card wide">
+        <h3>요일별 주요 수치 평균</h3>
+        <img src="{{ eda_charts.csv_weekday }}" alt="요일별 주요 수치 평균 그래프" />
+        <p>{{ eda_charts.csv_weekday_note }}</p>
+      </article>
+      {% endif %}
+
+      {% if eda_charts.csv_corr %}
+      <article class="eda-chart-card wide">
+        <h3>변수 간 관계</h3>
+        <img src="{{ eda_charts.csv_corr }}" alt="주요 수치 변수 상관관계 히트맵" />
+        <p>{{ eda_charts.csv_corr_note }}</p>
+      </article>
+      {% endif %}
+    </section>
+    {% elif selected_document and not error %}
+    <article class="eda-empty">
+      <h3>CSV를 분석하지 못했습니다</h3>
+      <p>파일 내용이 비어 있거나 CSV 형식으로 읽을 수 없습니다.</p>
+    </article>
+    {% endif %}
+
+    {% if selected_document and csv_profiles %}
+    <section class="csv-profile-grid" aria-label="CSV 내부 분석 요약">
+      {% for profile in csv_profiles %}
+      <article class="csv-profile-card">
+        <div class="csv-profile-heading">
+          <div>
+            <span>Dataset Summary</span>
+            <h3>전체 내용 요약</h3>
+          </div>
+          <strong>{{ profile.row_count }}행 · {{ profile.column_count }}열</strong>
+        </div>
+
+        <div class="csv-overview-card">
+          <div>
+            <span>{{ profile.title }}</span>
+            <h4>EDA 요약</h4>
+            <p>{{ profile.overview.summary }}</p>
+          </div>
+          <dl>
+            <div>
+              <dt>데이터 출처</dt>
+              <dd>{{ profile.overview.source }}</dd>
+            </div>
+            <div>
+              <dt>기간/범위</dt>
+              <dd>{{ profile.overview.period }}</dd>
+            </div>
+            <div>
+              <dt>데이터 구조</dt>
+              <dd>{{ profile.overview.structure }}</dd>
+            </div>
+            <div>
+              <dt>대표 변수</dt>
+              <dd>{{ profile.overview.columns }}</dd>
+            </div>
+            <div>
+              <dt>품질 상태</dt>
+              <dd>{{ profile.overview.quality }}</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

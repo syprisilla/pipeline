@@ -70,6 +70,37 @@ h2 {
   gap: 28px;
 }
 
+.metric-grid article {
+  border: 1px solid #d8e1ef;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
+}
+
+.metric-grid {
+  margin-bottom: 28px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metric-grid article {
+  padding: 20px;
+}
+
+.metric-grid span {
+  display: block;
+  margin-bottom: 8px;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.metric-grid strong {
+  color: #1d4ed8;
+  font-size: 32px;
+}
+
 .menu-card {
   min-height: 260px;
   padding: 40px;
@@ -396,6 +427,10 @@ button:hover,
   }
 
   .menu-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-grid {
     grid-template-columns: 1fr;
   }
 

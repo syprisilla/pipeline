@@ -8,8 +8,8 @@
 <section class="rag-container">
   <header class="rag-header">
     <a class="rag-back" href="/dashboard?username={{ username }}">메인으로</a>
-    <h2>RAG 질문</h2>
-    <p>저장된 문서를 기반으로 질문하고 관련 근거를 함께 확인하세요.</p>
+    <h2>Agent 질문</h2>
+    <p>Agent가 VectorDB에서 관련 데이터를 찾고 LLM이 근거 기반 답변을 생성합니다.</p>
 
     <form class="rag-form" action="/rag/ask" method="post">
       <input type="hidden" name="username" value="{{ username }}" />
@@ -24,7 +24,7 @@
           border-radius: 6px;
         "
       >
-        <option value="">전체 카테고리</option>
+        <option value="">전체 데이터</option>
         {% for category in categories %}
         <option value="{{ category.id }}">📁 {{ category.name }}</option>
         {% endfor %}
@@ -34,10 +34,10 @@
         id="question"
         name="question"
         rows="4"
-        placeholder="저장된 문서에 대해 질문하세요"
+        placeholder="예: 수집한 공공데이터에서 어떤 변수를 먼저 시각화하면 좋을까?"
         required
       >{{ rag_question }}</textarea>
-      <button type="submit">관련 문서 찾기</button>
+      <button type="submit">VectorDB 검색 후 답변 생성</button>
     </form>
   </header>
 
@@ -47,20 +47,20 @@
     {% endif %}
     {% if rag_answer %}
     <article class="rag-answer-card">
-      <span class="rag-label">Answer</span>
-      <h3>RAG 결과</h3>
+      <span class="rag-label">Agent Answer</span>
+      <h3>LLM 응답</h3>
       <div class="rag-answer-text">{{ rag_answer }}</div>
     </article>
     {% else %}
     <article class="rag-empty-card">
       <span class="rag-label">Ready</span>
       <h3>질문을 입력하세요</h3>
-      <p>답변과 참고 문서가 이 영역에 표시됩니다.</p>
+      <p>VectorDB 검색 결과와 LLM 답변이 이 영역에 표시됩니다.</p>
     </article>
     {% endif %}
     {% if rag_sources %}
     <section class="rag-sources">
-      <h3>참고 문서</h3>
+      <h3>VectorDB 검색 근거</h3>
       <div class="rag-source-list">
         {% for source in rag_sources %}
         <a

@@ -1,0 +1,169 @@
+{% extends "dashboard_base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/eda.css" />
+{% endblock %}
+
+{% block content %}
+<section class="eda-container">
+  <header class="eda-header">
+    <a class="eda-back" href="{% if selected_document %}/eda/{{ selected_document.id }}?username={{ username }}{% else %}/dashboard?username={{ username }}{% endif %}">
+      {% if selected_document %}분석 선택으로{% else %}메인으로{% endif %}
+    </a>
+    <h2>{% if selected_document %}{{ selected_document.title }} 전처리{% else %}전처리 점검{% endif %}</h2>
+    <p>CSV 파일을 분석하기 전에 결측치, 날짜 변환, 이상치, 수치형 변수, 범주형 인코딩 상태를 확인합니다.</p>
+  </header>
+
+  <div class="eda-content">
+    {% if error %}
+    <p class="eda-error">{{ error }}</p>
+    {% endif %}
+
+    {% if not selected_document %}
+    <section class="eda-metrics" aria-label="전처리 요약 지표">
+      <article>
+        <span>저장 데이터</span>
+        <strong>{{ pipeline_stats.source_count|default(0) }}</strong>
+      </article>
+      <article>
+        <span>DB Table</span>
+        <strong>{{ pipeline_stats.table_count|default(1) }}</strong>
+      </article>
+      <article>
+        <span>텍스트 문자 수</span>
+        <strong>{{ pipeline_stats.total_chars|default(0) }}</strong>
+      </article>
+      <article>
+        <span>CSV 자료</span>
+        <strong>{{ pipeline_stats.csv_count|default(0) }}</strong>
+      </article>
+    </section>
+    {% endif %}
+
+    {% if not selected_document %}
+    <section class="csv-file-section" aria-label="CSV 파일 선택">
+      <div class="eda-section-title">
+        <div>
+          <span>CSV Files</span>
+          <h3>전처리할 CSV 선택</h3>
+        </div>
+        <a href="/documents/new?username={{ username }}">데이터 수집</a>
+      </div>
+
+      {% if csv_documents %}
+      <div class="csv-file-grid">
+        {% for csv_document in csv_documents %}
+        <a
+          class="csv-file-card {% if selected_document and selected_document.id == csv_document.id %}active{% endif %}"
+          href="/preprocess/{{ csv_document.id }}?username={{ username }}"
+        >
+          <div>
+            <strong>{{ csv_document.title }}</strong>
+            <small>{{ csv_document.created_at }}</small>
+          </div>
+          <span>전처리 보기</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <article class="eda-empty">
+        <h3>전처리할 CSV가 없습니다</h3>
+        <p>먼저 공공데이터 수집 화면에서 CSV 파일을 업로드하세요.</p>
+        <a href="/documents/new?username={{ username }}">데이터 수집하기</a>
+      </article>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if selected_document and eda_charts %}
+    <section class="eda-chart-grid" aria-label="전처리 시각화 결과">
+      {% if eda_charts.missing_status %}
+      <article class="preprocess-status-card wide">
+        <span>Missing Values</span>
+        <h3>결측치 없음</h3>
+        <p>{{ eda_charts.missing_status }}</p>
+      </article>
+      {% endif %}
+
+      {% if eda_charts.missing_by_column %}
+      <article class="eda-chart-card wide">
+        <h3>컬럼별 결측치 개수</h3>
+        <img src="{{ eda_charts.missing_by_column }}" alt="컬럼별 결측치 개수 그래프" />
+        <p>{{ eda_charts.missing_by_column_note }}</p>
+      </article>
+      {% endif %}
+
+      {% if eda_charts.missing_before_after %}
+      <article class="eda-chart-card wide">
+        <h3>전처리 전/후 결측치 비교</h3>
+        <img src="{{ eda_charts.missing_before_after }}" alt="전처리 전후 결측치 비교 그래프" />
+        <p>{{ eda_charts.missing_before_after_note }}</p>
+      </article>
+      {% endif %}
+
+      {% if eda_charts.outlier_boxplot %}
+      <article class="eda-chart-card wide">
+        <h3>이상치 처리 전/후 박스플롯</h3>
+        <img src="{{ eda_charts.outlier_boxplot }}" alt="이상치 처리 전후 박스플롯" />
+        <p>{{ eda_charts.outlier_boxplot_note }}</p>
+      </article>
+      {% endif %}
+    </section>
+    {% elif selected_document and not error %}
+    <article class="eda-empty">
+      <h3>전처리 그래프를 만들 수 없습니다</h3>
+      <p>파일 내용이 비어 있거나 CSV 형식으로 읽을 수 없습니다.</p>
+    </article>
+    {% endif %}
+
+    {% if selected_document and csv_profiles %}
+    <section class="csv-profile-grid" aria-label="전처리 대상 데이터 요약">
+      {% for profile in csv_profiles %}
+      <article class="csv-profile-card">
+        <div class="csv-profile-heading">
+          <div>
+            <span>Dataset Summary</span>
+            <h3>전체 내용 요약</h3>
+          </div>
+          <strong>{{ profile.row_count }}행 · {{ profile.column_count }}열</strong>
+        </div>
+
+        <div class="csv-overview-card">
+          <div>
+            <span>{{ profile.title }}</span>
+            <h4>전처리 요약</h4>
+            <p>{{ profile.overview.summary }}</p>
+          </div>
+          <dl>
+            <div>
+              <dt>결측 상태</dt>
+              <dd>{{ profile.overview.quality }}</dd>
+            </div>
+            <div>
+              <dt>날짜 컬럼</dt>
+              <dd>
+                {% if profile.date_columns %}
+                {{ profile.date_columns|join(', ') }}
+                {% else %}
+                감지된 날짜 컬럼 없음
+                {% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt>수치형 변수</dt>
+              <dd>{{ profile.numeric_columns|length }}개</dd>
+            </div>
+            <div>
+              <dt>범주형 변수</dt>
+              <dd>{{ profile.categorical_columns|length }}개</dd>
+            </div>
+          </dl>
+        </div>
+
+      </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
