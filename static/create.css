@@ -1,0 +1,233 @@
+:root {
+  --create-primary: #4a6fe3;
+  --create-primary-dark: #2c5282;
+  --create-accent: #50c878;
+  --create-text: #2d3436;
+  --create-muted: #636e72;
+  --create-white: #ffffff;
+  --create-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --create-radius: 12px;
+  --create-transition: all 0.3s ease;
+}
+
+.dashboard-create {
+  width: min(1200px, calc(100vw - 48px));
+  margin: 32px auto;
+}
+
+.create-container {
+  overflow: hidden;
+  border-radius: var(--create-radius);
+  background: var(--create-white);
+  box-shadow: var(--create-shadow);
+}
+
+.create-header {
+  position: relative;
+  padding: 54px 40px 46px;
+  background: linear-gradient(135deg, var(--create-primary), var(--create-primary-dark));
+  color: var(--create-white);
+  text-align: center;
+}
+
+.create-header h2 {
+  margin: 0 0 12px;
+  color: var(--create-white);
+  font-size: 42px;
+  font-weight: 800;
+}
+
+.create-header p {
+  margin: 0 auto;
+  max-width: 760px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+}
+
+.create-back {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  min-height: 40px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  color: var(--create-white);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: var(--create-transition);
+}
+
+.create-back:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.create-content {
+  padding: 42px;
+}
+
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.create-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.create-field label {
+  color: var(--create-text);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.create-field input,
+.create-field textarea {
+  width: 100%;
+  border: 1px solid #e1e1e1;
+  border-radius: var(--create-radius);
+  background: #f9f9f9;
+  color: var(--create-text);
+  font-size: 16px;
+  transition: var(--create-transition);
+}
+
+.create-field input {
+  height: 54px;
+  padding: 0 18px;
+}
+
+.create-field textarea {
+  min-height: 260px;
+  padding: 18px;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.create-field input:focus,
+.create-field textarea:focus {
+  border-color: rgba(74, 111, 227, 0.55);
+  background: var(--create-white);
+  box-shadow: 0 0 0 4px rgba(74, 111, 227, 0.12);
+  outline: none;
+}
+
+.create-upload-box {
+  min-height: 160px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 12px;
+  border: 2px dashed rgba(74, 111, 227, 0.35);
+  border-radius: var(--create-radius);
+  background: rgba(74, 111, 227, 0.04);
+}
+
+.create-upload-box input[type="file"] {
+  width: 100%;
+  height: auto;
+  padding: 16px;
+  border: 1px solid #e1e1e1;
+  border-radius: 10px;
+  background: var(--create-white);
+  font-size: 16px;
+}
+
+.create-upload-box span {
+  color: var(--create-muted);
+  font-size: 14px;
+  text-align: right;
+}
+
+.create-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.create-actions button,
+.create-actions a {
+  min-height: 48px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--create-transition);
+}
+
+.create-actions button {
+  background: var(--create-primary);
+  color: var(--create-white);
+  box-shadow: 0 12px 24px rgba(74, 111, 227, 0.22);
+}
+
+.create-actions button:hover {
+  background: var(--create-primary-dark);
+}
+
+.create-actions a {
+  border: 1px solid #e1e1e1;
+  background: var(--create-white);
+  color: var(--create-muted);
+}
+
+.create-actions a:hover {
+  background: #f9f9f9;
+}
+
+.create-success,
+.create-error {
+  margin: 0 0 20px;
+  padding: 14px;
+  border-radius: var(--create-radius);
+  font-size: 14px;
+}
+
+.create-success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.create-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .dashboard-create {
+    width: min(100% - 24px, 1200px);
+    margin: 24px auto;
+  }
+
+  .create-header {
+    padding: 72px 22px 34px;
+  }
+
+  .create-header h2 {
+    font-size: 32px;
+  }
+
+  .create-content {
+    padding: 24px;
+  }
+
+  .create-actions {
+    flex-direction: column;
+  }
+}
