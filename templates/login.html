@@ -4,27 +4,92 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>로그인</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/login.css" />
   </head>
-  <body>
-    <main class="auth-box">
-      <h1>로그인</h1>
+  <body class="auth-page">
+    <section class="auth-section">
+      <div class="trans-wrapper">
+        <h1 class="brand-title">RAG 문서 탐색</h1>
+        <p class="brand-subtitle">문서를 저장하고 필요한 답을 빠르게 찾아보세요.</p>
+        <h6 class="trans-text">
+          <span>로그인</span>
+          <span>회원가입</span>
+        </h6>
 
-      {% if error %}
-      <p class="error">{{ error }}</p>
-      {% endif %}
+        <input type="checkbox" class="checkbox" id="reg-log" name="reg-log" />
+        <label class="auth-toggle" for="reg-log" aria-label="로그인 회원가입 전환"></label>
 
-      <form action="/login" method="post">
-        <label for="username">아이디</label>
-        <input id="username" name="username" type="text" required />
+        <div class="card-wrapper">
+          <div class="noise-overlay"></div>
 
-        <label for="password">비밀번호</label>
-        <input id="password" name="password" type="password" required />
+          <div class="card-login">
+            <h4>로그인</h4>
 
-        <button type="submit">로그인</button>
-      </form>
+            {% if error %}
+            <p class="error">{{ error }}</p>
+            {% endif %}
 
-      <p class="link-text">계정이 없나요? <a href="/signup">회원가입</a></p>
-    </main>
+            <form action="/login" method="post">
+              <input
+                id="username"
+                name="username"
+                type="text"
+                placeholder="아이디"
+                class="form-style"
+                autocomplete="username"
+                required
+              />
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="비밀번호"
+                class="form-style"
+                autocomplete="current-password"
+                required
+              />
+
+              <button type="submit">로그인</button>
+            </form>
+          </div>
+
+          <div class="card-signup">
+            <h4>회원가입</h4>
+
+            <form action="/signup" method="post">
+              <input
+                id="signup-username"
+                name="username"
+                type="text"
+                placeholder="아이디"
+                class="form-style"
+                autocomplete="username"
+                required
+              />
+              <input
+                id="signup-email"
+                name="email"
+                type="email"
+                placeholder="이메일"
+                class="form-style"
+                autocomplete="email"
+                required
+              />
+              <input
+                id="signup-password"
+                name="password"
+                type="password"
+                placeholder="비밀번호"
+                class="form-style"
+                autocomplete="new-password"
+                required
+              />
+
+              <button type="submit">회원가입</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
   </body>
 </html>
