@@ -389,7 +389,11 @@ def ask_document_question(
     rag_error = None
 
     try:
-        rag_result = ask_rag(question, category_id=category_id)
+        document_ids = None
+        if category_id:
+            rows = db.query(Document.id).filter(Document.category_id == category_id).all()
+            document_ids = [r.id for r in rows]
+        rag_result = ask_rag(question, document_ids=document_ids)
         rag_answer = rag_result["answer"]
         rag_sources = rag_result["sources"]
     except RuntimeError as error:

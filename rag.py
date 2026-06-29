@@ -194,7 +194,9 @@ def generate_ai_answer(question, sources):
             response_body = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
         error_body = error.read().decode("utf-8")
-        raise RuntimeError(f"Gemini API 요청 실패: {error_body}") from error
+        if error.code == 429:
+            raise RuntimeError("Gemini API 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.") from error
+        raise RuntimeError(f"Gemini API 요청 실패 ({error.code})") from error
     except urllib.error.URLError as error:
         raise RuntimeError(f"Gemini API 연결 실패: {error.reason}") from error
 
@@ -216,9 +218,12 @@ def generate_ai_answer(question, sources):
     return answer
 
 
-def ask_rag(question, limit=RAG_RESULT_LIMIT, category_id=None):
+def ask_rag(question, limit=RAG_RESULT_LIMIT, document_ids=None):
     collection = get_collection()
-    where = {"category_id": category_id} if category_id else None
+    if document_ids:
+        where = {"document_id": {"$in": document_ids}}
+    else:
+        where = None
     result = collection.query(query_texts=[question], n_results=limit, where=where)
 
     documents = result.get("documents", [[]])[0]
