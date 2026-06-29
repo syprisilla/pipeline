@@ -225,11 +225,55 @@ def ask_rag(question, limit=RAG_RESULT_LIMIT, category_id=None):
     metadatas = result.get("metadatas", [[]])[0]
     distances = result.get("distances", [[]])[0]
 
-    sources = []
+    grouped = {}
     for index, document_text in enumerate(documents):
         metadata = metadatas[index] if index < len(metadatas) else {}
         distance = distances[index] if index < len(distances) else None
-        sources.append(
+        doc_id = metadata.get("document_id")
+        title = metadata.get("title", "제목 없음")
+
+        # 청크 내용에서 앞뒤 잘라서 발췌문 생성
+        raw = document_text
+        # "내용:" 이후 텍스트만 추출
+        if "내용:" in raw:
+            raw = raw.split("내용:", 1)[1].strip()
+
+        # 페이지 번호 파싱 ([페이지 01] 형식)
+        page_prefix = ""
+        import re as _re
+        page_match = _re.search(r"\[페이지 (\d+)\]", raw)
+        if page_match:
+            page_prefix = f"page {int(page_match.group(1)):02d}. "
+            raw = _re.sub(r"\[페이지 \d+\]\n?", "", raw).strip()
+
+        excerpt_body = raw[:120].strip()
+        if len(raw) > 120:
+            excerpt = page_prefix + "..." + excerpt_body + "..."
+        else:
+            excerpt = page_prefix + "..." + excerpt_body + "..."
+
+        if doc_id not in grouped:
+            grouped[doc_id] = {
+                "document_id": doc_id,
+                "title": title,
+                "excerpts": [excerpt],
+                "chunks": [raw],
+                "distance": distance,
+            }
+        else:
+            grouped[doc_id]["excerpts"].append(excerpt)
+            grouped[doc_id]["chunks"].append(raw)
+            if distance is not None and distance < grouped[doc_id]["distance"]:
+                grouped[doc_id]["distance"] = distance
+
+    sources = list(grouped.values())
+
+    # generate_ai_answer용 flat sources (기존 형식 유지)
+    flat_sources = []
+    for index, document_text in enumerate(documents):
+        metadata = metadatas[index] if index < len(metadatas) else {}
+        distance = distances[index] if index < len(distances) else None
+        flat_sources.append(
             {
                 "title": metadata.get("title", "제목 없음"),
                 "chunk_index": metadata.get("chunk_index", "-"),
@@ -245,7 +289,7 @@ def ask_rag(question, limit=RAG_RESULT_LIMIT, category_id=None):
         }
 
     try:
-        answer = generate_ai_answer(question, sources)
+        answer = generate_ai_answer(question, flat_sources)
     except RuntimeError as error:
         answer = (
             "관련 문서는 찾았지만 AI 답변 생성은 아직 완료되지 않았습니다. "

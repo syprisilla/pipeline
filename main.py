@@ -71,10 +71,10 @@ def extract_pdf_text(file_bytes: bytes):
     reader = PdfReader(BytesIO(file_bytes))
     page_texts = []
 
-    for page in reader.pages:
+    for page_num, page in enumerate(reader.pages, start=1):
         page_text = page.extract_text() or ""
         if page_text.strip():
-            page_texts.append(page_text.strip())
+            page_texts.append(f"[페이지 {page_num:02d}]\n{page_text.strip()}")
 
     extracted_text = "\n\n".join(page_texts).strip()
     if not extracted_text:
@@ -408,6 +408,35 @@ def ask_document_question(
             rag_sources=rag_sources,
             rag_error=rag_error,
         ),
+    )
+
+
+@app.get("/documents/{document_id}")
+def document_viewer(
+    request: Request,
+    document_id: int,
+    username: str,
+    highlight: str = "",
+    db: Session = Depends(get_db),
+):
+    import json as _json
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        return RedirectResponse(url=f"/documents/list?username={username}", status_code=302)
+
+    try:
+        highlight_list = _json.loads(highlight) if highlight else []
+    except Exception:
+        highlight_list = []
+
+    return templates.TemplateResponse(
+        request,
+        "viewer.html",
+        {
+            "username": username,
+            "document": document,
+            "highlight": highlight_list,
+        },
     )
 
 

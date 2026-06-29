@@ -69,6 +69,145 @@
   padding: 42px;
 }
 
+.list-title-row {
+  margin-bottom: 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.list-eyebrow {
+  margin: 0 0 8px;
+  color: var(--list-primary);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.list-title-row h3 {
+  margin: 0;
+  color: var(--list-text);
+  font-size: 42px;
+  font-weight: 300;
+}
+
+.list-count {
+  margin: 0;
+  color: var(--list-muted);
+  font-size: 18px;
+}
+
+.list-live-search {
+  margin-bottom: 26px;
+}
+
+.list-live-search input {
+  width: 100%;
+  min-height: 54px;
+  padding: 0 18px;
+  border: 1px solid #d8dce8;
+  border-radius: var(--list-radius);
+  background: var(--list-white);
+  color: var(--list-text);
+  font-size: 17px;
+  outline: none;
+  transition: var(--list-transition);
+}
+
+.list-live-search input:focus {
+  border-color: rgba(74, 111, 227, 0.6);
+  box-shadow: 0 0 0 4px rgba(74, 111, 227, 0.12);
+}
+
+.document-table-wrap {
+  overflow-x: auto;
+  border-top: 1px solid #dfe3ec;
+}
+
+.document-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--list-text);
+  table-layout: fixed;
+}
+
+.document-table th {
+  padding: 20px 16px;
+  border-bottom: 2px solid #dfe3ec;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 900;
+  text-align: left;
+}
+
+.document-table td {
+  padding: 20px 16px;
+  border-bottom: 1px solid #e6e9f0;
+  color: var(--list-muted);
+  font-size: 15px;
+  line-height: 1.55;
+  vertical-align: top;
+}
+
+.document-table tbody tr {
+  transition: var(--list-transition);
+}
+
+.document-table tbody tr:hover {
+  background: rgba(74, 111, 227, 0.05);
+}
+
+.document-table th:nth-child(1),
+.document-table td:nth-child(1) { width: 27%; }
+
+.document-table th:nth-child(2),
+.document-table td:nth-child(2) { width: 16%; }
+
+.document-table th:nth-child(4),
+.document-table td:nth-child(4) { width: 20%; }
+
+.document-title-cell {
+  color: var(--list-text) !important;
+  font-weight: 800;
+}
+
+.document-category-pill {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(74, 111, 227, 0.1);
+  color: var(--list-primary);
+  font-size: 12px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.document-preview-cell span {
+  display: -webkit-box;
+  max-height: 4.8em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.document-date-cell {
+  white-space: nowrap;
+}
+
+.document-filter-empty {
+  display: none;
+  margin-top: 24px;
+}
+
+.document-filter-empty.visible {
+  display: block;
+}
+
 .list-summary {
   margin-bottom: 28px;
   padding: 22px;

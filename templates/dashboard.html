@@ -242,16 +242,12 @@
             <h3>참고 문서</h3>
             <div class="rag-source-list">
               {% for source in rag_sources %}
-              <article class="rag-source-item">
-                <div>
-                  <h4>{{ source.title }}</h4>
-                  <small>chunk {{ source.chunk_index }}</small>
-                </div>
-                <p>{{ source.content }}</p>
-                {% if source.distance is not none %}
-                <small>거리 점수: {{ "%.4f"|format(source.distance) }}</small>
-                {% endif %}
-              </article>
+              <a class="rag-source-item" href="/documents/{{ source.document_id }}?username={{ username }}&highlight={{ source.chunks | tojson | urlencode }}" target="_self">
+                <h4>📄 {{ source.title }}</h4>
+                {% for excerpt in source.excerpts %}
+                <p class="rag-excerpt">{{ excerpt }}</p>
+                {% endfor %}
+              </a>
               {% endfor %}
             </div>
           </section>
@@ -282,24 +278,51 @@
         {% endif %}
 
         <div class="list-content">
-          <div class="list-summary">
-            <span>총 문서</span>
-            <strong>{{ documents|length }}</strong>
+          <div class="list-title-row">
+            <div>
+              <p class="list-eyebrow">Document Table</p>
+              <h3>저장 문서</h3>
+            </div>
+            <p class="list-count">총 {{ documents|length }}개</p>
           </div>
 
+          <form class="list-live-search" action="#" onsubmit="return false;">
+            <input
+              id="documentLiveSearch"
+              type="search"
+              placeholder="문서 제목, 카테고리, 내용을 검색하세요"
+              aria-label="문서 목록 검색"
+            />
+          </form>
+
           {% if documents %}
-          <div class="archive-grid">
-            {% for document in documents %}
-            <article class="archive-card">
-              <span class="archive-badge">
-                {% if document.category %}📁 {{ document.category.name }}{% else %}Document{% endif %}
-              </span>
-              <h3>{{ document.title }}</h3>
-              <p>{{ document.content }}</p>
-              <small>{{ document.created_at }}</small>
-            </article>
-            {% endfor %}
+          <div class="document-table-wrap">
+            <table class="document-table" id="documentTable">
+              <thead>
+                <tr>
+                  <th>제목</th>
+                  <th>카테고리</th>
+                  <th>내용 미리보기</th>
+                  <th>등록일</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for document in documents %}
+                <tr data-search="{{ document.title }} {% if document.category %}{{ document.category.name }}{% else %}카테고리 없음{% endif %} {{ document.content }}">
+                  <td class="document-title-cell">{{ document.title }}</td>
+                  <td>
+                    <span class="document-category-pill">
+                      {% if document.category %}{{ document.category.name }}{% else %}없음{% endif %}
+                    </span>
+                  </td>
+                  <td class="document-preview-cell"><span>{{ document.content }}</span></td>
+                  <td class="document-date-cell">{{ document.created_at }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
+          <p class="list-empty document-filter-empty" id="documentFilterEmpty">검색 결과가 없습니다.</p>
           {% else %}
           <p class="list-empty">등록된 문서가 없습니다.</p>
           {% endif %}
@@ -353,5 +376,30 @@
       {% endif %}
 
     </main>
+    {% if active_view == "list" %}
+    <script>
+      const documentSearchInput = document.getElementById("documentLiveSearch");
+      const documentRows = document.querySelectorAll("#documentTable tbody tr");
+      const documentEmpty = document.getElementById("documentFilterEmpty");
+
+      if (documentSearchInput) {
+        documentSearchInput.addEventListener("input", () => {
+          const keyword = documentSearchInput.value.trim().toLowerCase();
+          let visibleCount = 0;
+
+          documentRows.forEach((row) => {
+            const targetText = row.dataset.search.toLowerCase();
+            const isVisible = targetText.includes(keyword);
+            row.hidden = !isVisible;
+            if (isVisible) visibleCount += 1;
+          });
+
+          if (documentEmpty) {
+            documentEmpty.classList.toggle("visible", visibleCount === 0);
+          }
+        });
+      }
+    </script>
+    {% endif %}
   </body>
 </html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ document.title }}</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f4f6ff;
+        color: #2d3436;
+      }
+
+      .viewer-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        padding: 18px 40px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: linear-gradient(135deg, #4a6fe3, #2c5282);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      }
+
+      .viewer-back {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 16px;
+        border: 2px solid rgba(255,255,255,0.8);
+        border-radius: 999px;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background 0.2s;
+      }
+
+      .viewer-back:hover { background: rgba(255,255,255,0.15); }
+
+      .viewer-title {
+        color: #fff;
+        font-size: 20px;
+        font-weight: 800;
+      }
+
+      .viewer-body {
+        max-width: 860px;
+        margin: 40px auto;
+        padding: 0 24px 80px;
+      }
+
+      .viewer-card {
+        padding: 40px;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        line-height: 1.9;
+        font-size: 16px;
+        color: #2d3436;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      mark {
+        background: #fff176;
+        color: inherit;
+        border-radius: 3px;
+        padding: 1px 2px;
+        box-shadow: 0 0 0 2px #fdd835;
+      }
+
+      .highlight-notice {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 12px 18px;
+        border-radius: 10px;
+        background: #fffde7;
+        border: 1.5px solid #fdd835;
+        color: #795548;
+        font-size: 14px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="viewer-header">
+      <a class="viewer-back" href="javascript:history.back()">← 돌아가기</a>
+      <span class="viewer-title">{{ document.title }}</span>
+    </header>
+
+    <div class="viewer-body">
+      {% if highlight %}
+      <div class="highlight-notice">
+        🔍 참고한 부분이 형광펜으로 표시되어 있습니다.
+      </div>
+      {% endif %}
+
+      <div class="viewer-card" id="viewer-content">{{ document.content }}</div>
+    </div>
+
+    {% if highlight %}
+    <script>
+      const highlights = {{ highlight | tojson | safe }};
+      const container = document.getElementById("viewer-content");
+      let html = container.textContent;
+
+      highlights.forEach(function(chunk) {
+        if (!chunk || chunk.length < 10) return;
+
+        // 30자씩 슬라이딩하며 매칭 시도
+        const step = 30;
+        for (let i = 0; i < chunk.length - step; i += step) {
+          const slice = chunk.substring(i, i + step).trim();
+          if (slice.length < 10) continue;
+          const escaped = slice.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const regex = new RegExp(escaped, "g");
+          if (regex.test(html)) {
+            html = html.replace(new RegExp(escaped, "g"), "<mark>" + slice + "</mark>");
+          }
+        }
+      });
+
+      container.innerHTML = html;
+
+      const firstMark = container.querySelector("mark");
+      if (firstMark) {
+        firstMark.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    </script>
+    {% endif %}
+  </body>
+</html>
