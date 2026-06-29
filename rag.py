@@ -113,6 +113,7 @@ def document_to_chunks(document):
                 "document_id": document.id,
                 "title": document.title,
                 "chunk_index": index + 1,
+                "category_id": document.category_id or 0,
             },
         }
         for index, chunk in enumerate(chunks)
@@ -215,9 +216,10 @@ def generate_ai_answer(question, sources):
     return answer
 
 
-def ask_rag(question, limit=RAG_RESULT_LIMIT):
+def ask_rag(question, limit=RAG_RESULT_LIMIT, category_id=None):
     collection = get_collection()
-    result = collection.query(query_texts=[question], n_results=limit)
+    where = {"category_id": category_id} if category_id else None
+    result = collection.query(query_texts=[question], n_results=limit, where=where)
 
     documents = result.get("documents", [[]])[0]
     metadatas = result.get("metadatas", [[]])[0]

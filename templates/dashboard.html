@@ -14,7 +14,7 @@
     {% if active_view == "rag" %}
     <link rel="stylesheet" href="/static/rag.css" />
     {% endif %}
-    {% if active_view == "list" %}
+    {% if active_view == "list" or active_view == "categories" %}
     <link rel="stylesheet" href="/static/list.css" />
     {% endif %}
   </head>
@@ -39,10 +39,7 @@
           <small>새 문서 제목과 내용을 저장합니다.</small>
         </a>
 
-        <a
-          class="menu-card"
-          href="/documents/search-page?username={{ username }}"
-        >
+        <a class="menu-card" href="/documents/search-page?username={{ username }}">
           <span class="menu-icon">⌕</span>
           <strong>문서 검색</strong>
           <small>저장된 문서에서 키워드를 찾습니다.</small>
@@ -59,8 +56,16 @@
           <strong>문서 목록</strong>
           <small>저장된 모든 문서를 확인합니다.</small>
         </a>
+
+        <a class="menu-card" href="/categories?username={{ username }}">
+          <span class="menu-icon">📁</span>
+          <strong>카테고리 관리</strong>
+          <small>카테고리를 만들고 문서를 분류합니다.</small>
+        </a>
       </section>
-      {% endif %} {% if active_view == "create" %}
+      {% endif %}
+
+      {% if active_view == "create" %}
       <section class="create-container">
         <header class="create-header">
           <a class="create-back" href="/dashboard?username={{ username }}">메인으로</a>
@@ -78,6 +83,16 @@
 
           <form action="/documents" method="post" enctype="multipart/form-data" class="create-form">
             <input type="hidden" name="username" value="{{ username }}" />
+
+            <div class="create-field">
+              <label for="category_id">카테고리</label>
+              <select id="category_id" name="category_id">
+                <option value="">카테고리 없음</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
 
             <div class="create-field">
               <label for="title">제목</label>
@@ -115,7 +130,9 @@
           </form>
         </div>
       </section>
-      {% endif %} {% if active_view == "search" %}
+      {% endif %}
+
+      {% if active_view == "search" %}
       <section class="search-container">
         <header class="search-header">
           <a class="search-back" href="/dashboard?username={{ username }}">메인으로</a>
@@ -154,6 +171,9 @@
               <article class="search-result-item">
                 <div>
                   <h4>{{ document.title }}</h4>
+                  {% if document.category %}
+                  <small>📁 {{ document.category.name }}</small>
+                  {% endif %}
                   <p>{{ document.content }}</p>
                 </div>
                 <small>{{ document.created_at }}</small>
@@ -168,7 +188,9 @@
           {% endif %}
         </div>
       </section>
-      {% endif %} {% if active_view == "rag" %}
+      {% endif %}
+
+      {% if active_view == "rag" %}
       <section class="rag-container">
         <header class="rag-header">
           <a class="rag-back" href="/dashboard?username={{ username }}">메인으로</a>
@@ -177,6 +199,14 @@
 
           <form class="rag-form" action="/rag/ask" method="post">
             <input type="hidden" name="username" value="{{ username }}" />
+            {% if categories %}
+            <select name="category_id" style="width:100%; padding:8px 12px; margin-bottom:8px; border:1px solid #ddd; border-radius:6px;">
+              <option value="">전체 카테고리</option>
+              {% for category in categories %}
+              <option value="{{ category.id }}">📁 {{ category.name }}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
             <textarea
               id="question"
               name="question"
@@ -228,13 +258,28 @@
           {% endif %}
         </div>
       </section>
-      {% endif %} {% if active_view == "list" %}
+      {% endif %}
+
+      {% if active_view == "list" %}
       <section class="list-container">
         <header class="list-header">
           <a class="list-back" href="/dashboard?username={{ username }}">메인으로</a>
           <h2>문서 목록</h2>
           <p>저장된 문서를 한 곳에서 확인하고 검색/RAG에 사용할 자료를 점검하세요.</p>
         </header>
+
+        {% if categories %}
+        <div class="list-category-bar">
+          <a class="list-category-chip {% if not selected_category_id %}active{% endif %}"
+             href="/documents/list?username={{ username }}">전체</a>
+          {% for category in categories %}
+          <a class="list-category-chip {% if selected_category_id == category.id %}active{% endif %}"
+             href="/documents/list?username={{ username }}&category_id={{ category.id }}">
+            📁 {{ category.name }}
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
 
         <div class="list-content">
           <div class="list-summary">
@@ -246,7 +291,9 @@
           <div class="archive-grid">
             {% for document in documents %}
             <article class="archive-card">
-              <span class="archive-badge">Document</span>
+              <span class="archive-badge">
+                {% if document.category %}📁 {{ document.category.name }}{% else %}Document{% endif %}
+              </span>
               <h3>{{ document.title }}</h3>
               <p>{{ document.content }}</p>
               <small>{{ document.created_at }}</small>
@@ -259,6 +306,52 @@
         </div>
       </section>
       {% endif %}
+
+      {% if active_view == "categories" %}
+      <section class="list-container">
+        <header class="list-header">
+          <a class="list-back" href="/dashboard?username={{ username }}">메인으로</a>
+          <h2>카테고리 관리</h2>
+          <p>카테고리를 만들어 문서를 폴더처럼 분류하세요.</p>
+        </header>
+
+        <div class="list-content">
+          {% if message %}
+          <p class="category-message category-message--success">{{ message }}</p>
+          {% endif %}
+          {% if rag_error %}
+          <p class="category-message category-message--error">{{ rag_error }}</p>
+          {% endif %}
+
+          <form action="/categories" method="post" class="category-add-form">
+            <input type="hidden" name="username" value="{{ username }}" />
+            <input type="text" name="name" placeholder="새 카테고리 이름을 입력하세요" required class="category-add-input" />
+            <button type="submit" class="category-add-btn">추가</button>
+          </form>
+
+          {% if categories %}
+          <div class="archive-grid">
+            {% for category in categories %}
+            <article class="archive-card">
+              <span class="archive-badge">📁 카테고리</span>
+              <a href="/documents/list?username={{ username }}&category_id={{ category.id }}" style="text-decoration:none; color:inherit;">
+                <h3>{{ category.name }}</h3>
+                <p>문서 {{ category.documents|length }}개</p>
+              </a>
+              <form action="/categories/{{ category.id }}/delete" method="post" class="category-delete-form">
+                <input type="hidden" name="username" value="{{ username }}" />
+                <button type="submit" class="category-delete-btn">삭제</button>
+              </form>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="list-empty">생성된 카테고리가 없습니다.</p>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
     </main>
   </body>
 </html>

@@ -149,6 +149,123 @@
   color: var(--list-muted);
 }
 
+.category-add-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.category-add-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1.5px solid #d0d8f0;
+  border-radius: var(--list-radius);
+  font-size: 14px;
+  color: var(--list-text);
+  outline: none;
+  transition: var(--list-transition);
+}
+
+.category-add-input:focus {
+  border-color: var(--list-primary);
+  box-shadow: 0 0 0 3px rgba(74, 111, 227, 0.12);
+}
+
+.category-add-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--list-radius);
+  background: var(--list-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--list-transition);
+}
+
+.category-add-btn:hover {
+  background: var(--list-primary-dark);
+}
+
+.category-delete-form {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.category-delete-btn {
+  padding: 6px 14px;
+  border: 1.5px solid #ffb3b3;
+  border-radius: 999px;
+  background: none;
+  color: #e55353;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--list-transition);
+}
+
+.category-delete-btn:hover {
+  background: #fff0f0;
+  border-color: #e55353;
+}
+
+.category-message {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border-radius: var(--list-radius);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.category-message--success {
+  background: #f0fff4;
+  border: 1.5px solid #68d391;
+  color: #276749;
+}
+
+.category-message--error {
+  background: #fff5f5;
+  border: 1.5px solid #fc8181;
+  color: #c53030;
+}
+
+.list-category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 20px 42px;
+  background: #f4f6ff;
+  border-bottom: 1px solid #e0e6f8;
+}
+
+.list-category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1.5px solid #d0d8f0;
+  background: #fff;
+  color: var(--list-muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: var(--list-transition);
+}
+
+.list-category-chip:hover {
+  border-color: var(--list-primary);
+  color: var(--list-primary);
+  background: rgba(74, 111, 227, 0.05);
+}
+
+.list-category-chip.active {
+  background: var(--list-primary);
+  border-color: var(--list-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(74, 111, 227, 0.25);
+}
+
 @media (max-width: 768px) {
   .dashboard-list {
     width: min(100% - 24px, 1200px);

@@ -1,4 +1,8 @@
+import os
 from io import BytesIO
+
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import RedirectResponse
@@ -7,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
-from models import Document, User
+from models import Category, Document, User
 from rag import ask_rag, sync_documents, upsert_document
 
 app = FastAPI()
@@ -21,7 +25,9 @@ Base.metadata.create_all(bind=engine)
 def dashboard_context(
     username,
     documents,
+    categories=None,
     active_view="home",
+    selected_category_id=None,
     keyword="",
     rag_question="",
     rag_answer="",
@@ -32,7 +38,9 @@ def dashboard_context(
     return {
         "username": username,
         "documents": documents,
+        "categories": categories or [],
         "active_view": active_view,
+        "selected_category_id": selected_category_id,
         "keyword": keyword,
         "rag_question": rag_question,
         "rag_answer": rag_answer,
@@ -102,11 +110,7 @@ def home():
 
 @app.get("/signup")
 def signup_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "signup.html",
-        {"error": None},
-    )
+    return templates.TemplateResponse(request, "signup.html", {"error": None})
 
 
 @app.post("/signup")
@@ -139,11 +143,7 @@ def signup(
 
 @app.get("/login")
 def login_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "login.html",
-        {"error": None},
-    )
+    return templates.TemplateResponse(request, "login.html", {"error": None})
 
 
 @app.post("/login")
@@ -167,71 +167,60 @@ def login(
         )
 
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
 
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        dashboard_context(user.username, documents),
+        dashboard_context(user.username, documents, categories),
     )
 
 
 @app.get("/dashboard")
-def dashboard_page(
-    request: Request,
-    username: str,
-    db: Session = Depends(get_db),
-):
+def dashboard_page(request: Request, username: str, db: Session = Depends(get_db)):
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
 
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        dashboard_context(username, documents),
+        dashboard_context(username, documents, categories),
     )
 
 
 @app.get("/documents/new")
-def new_document_page(
-    request: Request,
-    username: str,
-    db: Session = Depends(get_db),
-):
+def new_document_page(request: Request, username: str, db: Session = Depends(get_db)):
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
 
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        dashboard_context(username, documents, active_view="create"),
+        dashboard_context(username, documents, categories, active_view="create"),
     )
 
 
 @app.get("/documents/search-page")
-def search_document_page(
-    request: Request,
-    username: str,
-    db: Session = Depends(get_db),
-):
+def search_document_page(request: Request, username: str, db: Session = Depends(get_db)):
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
 
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        dashboard_context(username, documents, active_view="search"),
+        dashboard_context(username, documents, categories, active_view="search"),
     )
 
 
 @app.get("/rag")
-def rag_page(
-    request: Request,
-    username: str,
-    db: Session = Depends(get_db),
-):
+def rag_page(request: Request, username: str, db: Session = Depends(get_db)):
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
 
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        dashboard_context(username, documents, active_view="rag"),
+        dashboard_context(username, documents, categories, active_view="rag"),
     )
 
 
@@ -239,14 +228,31 @@ def rag_page(
 def document_list_page(
     request: Request,
     username: str,
+    category_id: int = None,
     db: Session = Depends(get_db),
 ):
-    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
+
+    if category_id:
+        documents = (
+            db.query(Document)
+            .filter(Document.category_id == category_id)
+            .order_by(Document.created_at.desc())
+            .all()
+        )
+    else:
+        documents = db.query(Document).order_by(Document.created_at.desc()).all()
 
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        dashboard_context(username, documents, active_view="list"),
+        dashboard_context(
+            username,
+            documents,
+            categories,
+            active_view="list",
+            selected_category_id=category_id,
+        ),
     )
 
 
@@ -256,12 +262,14 @@ async def create_document(
     username: str = Form(...),
     title: str = Form(""),
     content: str = Form(""),
+    category_id: int = Form(None),
     attachments: list[UploadFile] | None = File(None),
     db: Session = Depends(get_db),
 ):
     rag_error = None
     saved_count = 0
     documents_to_index = []
+    categories = db.query(Category).order_by(Category.name).all()
 
     cleaned_title = title.strip()
     cleaned_content = content.strip()
@@ -270,6 +278,7 @@ async def create_document(
         direct_document = Document(
             title=cleaned_title or "직접 작성 문서",
             content=cleaned_content,
+            category_id=category_id,
         )
         db.add(direct_document)
         documents_to_index.append(direct_document)
@@ -290,6 +299,7 @@ async def create_document(
         file_document = Document(
             title=upload_file.filename or "업로드 문서",
             content=extracted_content,
+            category_id=category_id,
         )
         db.add(file_document)
         documents_to_index.append(file_document)
@@ -302,6 +312,7 @@ async def create_document(
             dashboard_context(
                 username,
                 documents,
+                categories,
                 active_view="create",
                 rag_error=rag_error or "직접 작성 내용 또는 업로드 파일이 필요합니다.",
             ),
@@ -325,6 +336,7 @@ async def create_document(
         dashboard_context(
             username,
             documents,
+            categories,
             active_view="create",
             rag_error=rag_error,
             message=f"문서 {saved_count}개가 저장되었습니다.",
@@ -339,6 +351,8 @@ def search_documents(
     keyword: str = "",
     db: Session = Depends(get_db),
 ):
+    categories = db.query(Category).order_by(Category.name).all()
+
     if keyword:
         search_word = f"%{keyword}%"
         documents = (
@@ -356,7 +370,7 @@ def search_documents(
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        dashboard_context(username, documents, active_view="search", keyword=keyword),
+        dashboard_context(username, documents, categories, active_view="search", keyword=keyword),
     )
 
 
@@ -365,16 +379,17 @@ def ask_document_question(
     request: Request,
     username: str = Form(...),
     question: str = Form(...),
+    category_id: int = Form(None),
     db: Session = Depends(get_db),
 ):
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
     rag_answer = ""
     rag_sources = []
     rag_error = None
 
     try:
-        sync_documents(documents)
-        rag_result = ask_rag(question)
+        rag_result = ask_rag(question, category_id=category_id)
         rag_answer = rag_result["answer"]
         rag_sources = rag_result["sources"]
     except RuntimeError as error:
@@ -386,10 +401,96 @@ def ask_document_question(
         dashboard_context(
             username,
             documents,
+            categories,
             active_view="rag",
             rag_question=question,
             rag_answer=rag_answer,
             rag_sources=rag_sources,
             rag_error=rag_error,
         ),
+    )
+
+
+@app.post("/categories")
+def create_category(
+    request: Request,
+    username: str = Form(...),
+    name: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    existing = db.query(Category).filter(Category.name == name.strip()).first()
+    if existing:
+        documents = db.query(Document).order_by(Document.created_at.desc()).all()
+        categories = db.query(Category).order_by(Category.name).all()
+        return templates.TemplateResponse(
+            request,
+            "dashboard.html",
+            dashboard_context(
+                username,
+                documents,
+                categories,
+                active_view="categories",
+                rag_error="이미 존재하는 카테고리 이름입니다.",
+            ),
+        )
+
+    db.add(Category(name=name.strip()))
+    db.commit()
+
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        dashboard_context(
+            username,
+            documents,
+            categories,
+            active_view="categories",
+            message=f'카테고리 "{name.strip()}"이 생성되었습니다.',
+        ),
+    )
+
+
+@app.post("/categories/{category_id}/delete")
+def delete_category(
+    request: Request,
+    category_id: int,
+    username: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if category:
+        db.query(Document).filter(Document.category_id == category_id).update(
+            {"category_id": None}
+        )
+        db.delete(category)
+        db.commit()
+
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        dashboard_context(
+            username,
+            documents,
+            categories,
+            active_view="categories",
+            message="카테고리가 삭제되었습니다.",
+        ),
+    )
+
+
+@app.get("/categories")
+def categories_page(request: Request, username: str, db: Session = Depends(get_db)):
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
+
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        dashboard_context(username, documents, categories, active_view="categories"),
     )

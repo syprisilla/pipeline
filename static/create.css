@@ -89,7 +89,8 @@
 }
 
 .create-field input,
-.create-field textarea {
+.create-field textarea,
+.create-field select {
   width: 100%;
   border: 1px solid #e1e1e1;
   border-radius: var(--create-radius);
@@ -97,6 +98,23 @@
   color: var(--create-text);
   font-size: 16px;
   transition: var(--create-transition);
+}
+
+.create-field select {
+  height: 54px;
+  padding: 0 18px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23636e72' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  cursor: pointer;
+}
+
+.create-field select:focus {
+  border-color: rgba(74, 111, 227, 0.55);
+  background-color: var(--create-white);
+  box-shadow: 0 0 0 4px rgba(74, 111, 227, 0.12);
+  outline: none;
 }
 
 .create-field input {
