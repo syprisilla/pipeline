@@ -7,14 +7,11 @@
     <link rel="stylesheet" href="/static/dashboard.css" />
     {% if active_view == "create" %}
     <link rel="stylesheet" href="/static/create.css" />
-    {% endif %}
-    {% if active_view == "search" %}
+    {% endif %} {% if active_view == "search" %}
     <link rel="stylesheet" href="/static/search.css" />
-    {% endif %}
-    {% if active_view == "rag" %}
+    {% endif %} {% if active_view == "rag" %}
     <link rel="stylesheet" href="/static/rag.css" />
-    {% endif %}
-    {% if active_view == "list" or active_view == "categories" %}
+    {% endif %} {% if active_view == "list" or active_view == "categories" %}
     <link rel="stylesheet" href="/static/list.css" />
     {% endif %}
   </head>
@@ -29,9 +26,7 @@
         </div>
         <a class="ghost-link" href="/login">로그아웃</a>
       </header>
-      {% endif %}
-
-      {% if active_view == "home" %}
+      {% endif %} {% if active_view == "home" %}
       <section class="menu-grid" aria-label="문서 검색 서비스 메뉴">
         <a class="menu-card" href="/documents/new?username={{ username }}">
           <span class="menu-icon">+</span>
@@ -39,7 +34,10 @@
           <small>새 문서 제목과 내용을 저장합니다.</small>
         </a>
 
-        <a class="menu-card" href="/documents/search-page?username={{ username }}">
+        <a
+          class="menu-card"
+          href="/documents/search-page?username={{ username }}"
+        >
           <span class="menu-icon">⌕</span>
           <strong>문서 검색</strong>
           <small>저장된 문서에서 키워드를 찾습니다.</small>
@@ -58,30 +56,47 @@
         </a>
 
         <a class="menu-card" href="/categories?username={{ username }}">
-          <span class="menu-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16"><path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139q.323-.119.684-.12h5.396z"/></svg></span>
+          <span class="menu-icon"
+            ><svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139q.323-.119.684-.12h5.396z"
+              /></svg
+          ></span>
           <strong>카테고리 관리</strong>
           <small>카테고리를 만들고 문서를 분류합니다.</small>
         </a>
       </section>
-      {% endif %}
-
-      {% if active_view == "create" %}
+      {% endif %} {% if active_view == "create" %}
       <section class="create-container">
         <header class="create-header">
-          <a class="create-back" href="/dashboard?username={{ username }}">메인으로</a>
+          <a class="create-back" href="/dashboard?username={{ username }}"
+            >메인으로</a
+          >
           <h2>문서 등록</h2>
-          <p>직접 작성하거나 PDF, TXT, Markdown 파일을 첨부해 문서를 저장하세요.</p>
+          <p>
+            직접 작성하거나 PDF, TXT, Markdown 파일을 첨부해 문서를 저장하세요.
+          </p>
         </header>
 
         <div class="create-content">
           {% if message %}
           <p class="create-success">{{ message }}</p>
-          {% endif %}
-          {% if rag_error %}
+          {% endif %} {% if rag_error %}
           <p class="create-error">{{ rag_error }}</p>
           {% endif %}
 
-          <form action="/documents" method="post" enctype="multipart/form-data" class="create-form">
+          <form
+            action="/documents"
+            method="post"
+            enctype="multipart/form-data"
+            class="create-form"
+          >
             <input type="hidden" name="username" value="{{ username }}" />
 
             <div class="create-field">
@@ -96,7 +111,12 @@
 
             <div class="create-field">
               <label for="title">제목</label>
-              <input id="title" name="title" type="text" placeholder="문서 제목을 입력하세요" />
+              <input
+                id="title"
+                name="title"
+                type="text"
+                placeholder="문서 제목을 입력하세요"
+              />
             </div>
 
             <div class="create-field">
@@ -130,12 +150,12 @@
           </form>
         </div>
       </section>
-      {% endif %}
-
-      {% if active_view == "search" %}
+      {% endif %} {% if active_view == "search" %}
       <section class="search-container">
         <header class="search-header">
-          <a class="search-back" href="/dashboard?username={{ username }}">메인으로</a>
+          <a class="search-back" href="/dashboard?username={{ username }}"
+            >메인으로</a
+          >
           <h2>문서 검색</h2>
           <p>저장된 문서에서 필요한 내용을 빠르게 찾아보세요.</p>
 
@@ -163,44 +183,56 @@
         </header>
 
         <div class="search-content">
-          <h3>{% if keyword %}"{{ keyword }}" 검색 결과{% else %}검색을 시작하세요{% endif %}</h3>
-          {% if keyword %}
-            {% if documents %}
-            <div class="search-results">
-              {% for document in documents %}
-              <article class="search-result-item">
-                <div>
-                  <h4>{{ document.title }}</h4>
-                  {% if document.category %}
-                  <small>📁 {{ document.category.name }}</small>
-                  {% endif %}
-                  <p>{{ document.content }}</p>
-                </div>
-                <small>{{ document.created_at }}</small>
-              </article>
-              {% endfor %}
-            </div>
-            {% else %}
-            <p class="search-empty">검색 결과가 없습니다.</p>
-            {% endif %}
+          <h3>
+            {% if keyword %}"{{ keyword }}" 검색 결과{% else %}검색을
+            시작하세요{% endif %}
+          </h3>
+          {% if keyword %} {% if documents %}
+          <div class="search-results">
+            {% for document in documents %}
+            <article class="search-result-item">
+              <div>
+                <h4>{{ document.title }}</h4>
+                {% if document.category %}
+                <small>📁 {{ document.category.name }}</small>
+                {% endif %}
+                <p>{{ document.content }}</p>
+              </div>
+              <small>{{ document.created_at }}</small>
+            </article>
+            {% endfor %}
+          </div>
           {% else %}
-          <p class="search-empty">검색어를 입력하면 저장된 문서 결과가 여기에 표시됩니다.</p>
+          <p class="search-empty">검색 결과가 없습니다.</p>
+          {% endif %} {% else %}
+          <p class="search-empty">
+            검색어를 입력하면 저장된 문서 결과가 여기에 표시됩니다.
+          </p>
           {% endif %}
         </div>
       </section>
-      {% endif %}
-
-      {% if active_view == "rag" %}
+      {% endif %} {% if active_view == "rag" %}
       <section class="rag-container">
         <header class="rag-header">
-          <a class="rag-back" href="/dashboard?username={{ username }}">메인으로</a>
+          <a class="rag-back" href="/dashboard?username={{ username }}"
+            >메인으로</a
+          >
           <h2>RAG 질문</h2>
           <p>저장된 문서를 기반으로 질문하고 관련 근거를 함께 확인하세요.</p>
 
           <form class="rag-form" action="/rag/ask" method="post">
             <input type="hidden" name="username" value="{{ username }}" />
             {% if categories %}
-            <select name="category_id" style="width:100%; padding:8px 12px; margin-bottom:8px; border:1px solid #ddd; border-radius:6px;">
+            <select
+              name="category_id"
+              style="
+                width: 100%;
+                padding: 8px 12px;
+                margin-bottom: 8px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+              "
+            >
               <option value="">전체 카테고리</option>
               {% for category in categories %}
               <option value="{{ category.id }}">📁 {{ category.name }}</option>
@@ -213,7 +245,9 @@
               rows="4"
               placeholder="저장된 문서에 대해 질문하세요"
               required
-            >{{ rag_question }}</textarea>
+            >
+{{ rag_question }}</textarea
+            >
             <button type="submit">관련 문서 찾기</button>
           </form>
         </header>
@@ -221,9 +255,7 @@
         <div class="rag-content">
           {% if rag_error %}
           <p class="rag-error">{{ rag_error }}</p>
-          {% endif %}
-
-          {% if rag_answer %}
+          {% endif %} {% if rag_answer %}
           <article class="rag-answer-card">
             <span class="rag-label">Answer</span>
             <h3>RAG 결과</h3>
@@ -235,14 +267,16 @@
             <h3>질문을 입력하세요</h3>
             <p>답변과 참고 문서가 이 영역에 표시됩니다.</p>
           </article>
-          {% endif %}
-
-          {% if rag_sources %}
+          {% endif %} {% if rag_sources %}
           <section class="rag-sources">
             <h3>참고 문서</h3>
             <div class="rag-source-list">
               {% for source in rag_sources %}
-              <a class="rag-source-item" href="/documents/{{ source.document_id }}?username={{ username }}&highlight={{ source.chunks | tojson | urlencode }}" target="_self">
+              <a
+                class="rag-source-item"
+                href="/documents/{{ source.document_id }}?username={{ username }}&highlight={{ source.chunks | tojson | urlencode }}"
+                target="_self"
+              >
                 <h4>📄 {{ source.title }}</h4>
                 {% for excerpt in source.excerpts %}
                 <p class="rag-excerpt">{{ excerpt }}</p>
@@ -254,24 +288,44 @@
           {% endif %}
         </div>
       </section>
-      {% endif %}
-
-      {% if active_view == "list" %}
+      {% endif %} {% if active_view == "list" %}
       <section class="list-container">
         <header class="list-header">
-          <a class="list-back" href="/dashboard?username={{ username }}">메인으로</a>
+          <a class="list-back" href="/dashboard?username={{ username }}"
+            >메인으로</a
+          >
           <h2>문서 목록</h2>
-          <p>저장된 문서를 한 곳에서 확인하고 검색/RAG에 사용할 자료를 점검하세요.</p>
+          <p>
+            저장된 문서를 한 곳에서 확인하고 검색/RAG에 사용할 자료를
+            점검하세요.
+          </p>
         </header>
 
         {% if categories %}
         <div class="list-category-bar">
-          <a class="list-category-chip {% if not selected_category_id %}active{% endif %}"
-             href="/documents/list?username={{ username }}">전체</a>
+          <a
+            class="list-category-chip {% if not selected_category_id %}active{% endif %}"
+            href="/documents/list?username={{ username }}"
+            >전체</a
+          >
           {% for category in categories %}
-          <a class="list-category-chip {% if selected_category_id == category.id %}active{% endif %}"
-             href="/documents/list?username={{ username }}&category_id={{ category.id }}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-folder" viewBox="0 0 16 16"><path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139q.323-.119.684-.12h5.396z"/></svg> {{ category.name }}
+          <a
+            class="list-category-chip {% if selected_category_id == category.id %}active{% endif %}"
+            href="/documents/list?username={{ username }}&category_id={{ category.id }}"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              fill="currentColor"
+              class="bi bi-folder"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139q.323-.119.684-.12h5.396z"
+              />
+            </svg>
+            {{ category.name }}
           </a>
           {% endfor %}
         </div>
@@ -308,47 +362,63 @@
               </thead>
               <tbody>
                 {% for document in documents %}
-                <tr data-search="{{ document.title }} {% if document.category %}{{ document.category.name }}{% else %}카테고리 없음{% endif %} {{ document.content }}">
+                <tr
+                  data-search="{{ document.title }} {% if document.category %}{{ document.category.name }}{% else %}카테고리 없음{% endif %} {{ document.content }}"
+                >
                   <td class="document-title-cell">{{ document.title }}</td>
                   <td>
                     <span class="document-category-pill">
-                      {% if document.category %}{{ document.category.name }}{% else %}없음{% endif %}
+                      {% if document.category %}{{ document.category.name }}{%
+                      else %}없음{% endif %}
                     </span>
                   </td>
-                  <td class="document-preview-cell"><span>{{ document.content }}</span></td>
+                  <td class="document-preview-cell">
+                    <span>{{ document.content }}</span>
+                  </td>
                   <td class="document-date-cell">{{ document.created_at }}</td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
-          <p class="list-empty document-filter-empty" id="documentFilterEmpty">검색 결과가 없습니다.</p>
+          <p class="list-empty document-filter-empty" id="documentFilterEmpty">
+            검색 결과가 없습니다.
+          </p>
           {% else %}
           <p class="list-empty">등록된 문서가 없습니다.</p>
           {% endif %}
         </div>
       </section>
-      {% endif %}
-
-      {% if active_view == "categories" %}
+      {% endif %} {% if active_view == "categories" %}
       <section class="list-container">
         <header class="list-header">
-          <a class="list-back" href="/dashboard?username={{ username }}">메인으로</a>
+          <a class="list-back" href="/dashboard?username={{ username }}"
+            >메인으로</a
+          >
           <h2>카테고리 관리</h2>
           <p>카테고리를 만들어 문서를 폴더처럼 분류하세요.</p>
         </header>
 
         <div class="list-content">
           {% if message %}
-          <p class="category-message category-message--success">{{ message }}</p>
-          {% endif %}
-          {% if rag_error %}
-          <p class="category-message category-message--error">{{ rag_error }}</p>
+          <p class="category-message category-message--success">
+            {{ message }}
+          </p>
+          {% endif %} {% if rag_error %}
+          <p class="category-message category-message--error">
+            {{ rag_error }}
+          </p>
           {% endif %}
 
           <form action="/categories" method="post" class="category-add-form">
             <input type="hidden" name="username" value="{{ username }}" />
-            <input type="text" name="name" placeholder="새 카테고리 이름을 입력하세요" required class="category-add-input" />
+            <input
+              type="text"
+              name="name"
+              placeholder="새 카테고리 이름을 입력하세요"
+              required
+              class="category-add-input"
+            />
             <button type="submit" class="category-add-btn">추가</button>
           </form>
 
@@ -356,12 +426,32 @@
           <div class="archive-grid">
             {% for category in categories %}
             <article class="archive-card">
-              <span class="archive-badge"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139q.323-.119.684-.12h5.396z"/></svg> 카테고리</span>
-              <a href="/documents/list?username={{ username }}&category_id={{ category.id }}" style="text-decoration:none; color:inherit;">
+              <span class="archive-badge"
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  fill="currentColor"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139q.323-.119.684-.12h5.396z"
+                  />
+                </svg>
+                카테고리</span
+              >
+              <a
+                href="/documents/list?username={{ username }}&category_id={{ category.id }}"
+                style="text-decoration: none; color: inherit"
+              >
                 <h3>{{ category.name }}</h3>
                 <p>문서 {{ category.documents|length }}개</p>
               </a>
-              <form action="/categories/{{ category.id }}/delete" method="post" class="category-delete-form">
+              <form
+                action="/categories/{{ category.id }}/delete"
+                method="post"
+                class="category-delete-form"
+              >
                 <input type="hidden" name="username" value="{{ username }}" />
                 <button type="submit" class="category-delete-btn">삭제</button>
               </form>
@@ -374,7 +464,6 @@
         </div>
       </section>
       {% endif %}
-
     </main>
     {% if active_view == "list" %}
     <script>
@@ -391,7 +480,10 @@
             const targetText = row.dataset.search.toLowerCase();
             const isVisible = targetText.includes(keyword);
             row.hidden = !isVisible;
-            if (isVisible) visibleCount += 1;
+
+            if (isVisible) {
+              visibleCount += 1;
+            }
           });
 
           if (documentEmpty) {
