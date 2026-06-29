@@ -1,0 +1,67 @@
+{% extends "dashboard_base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/search.css" />
+{% endblock %}
+
+{% block content %}
+<section class="search-container">
+  <header class="search-header">
+    <a class="search-back" href="/dashboard?username={{ username }}">메인으로</a>
+    <h2>문서 검색</h2>
+    <p>저장된 문서에서 필요한 내용을 빠르게 찾아보세요.</p>
+
+    <form class="search-form" action="/documents/search" method="get">
+      <input type="hidden" name="username" value="{{ username }}" />
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input
+          id="keyword"
+          name="keyword"
+          type="text"
+          placeholder="검색어를 입력하세요"
+          value="{{ keyword }}"
+        />
+        <button type="submit">검색</button>
+      </div>
+    </form>
+
+    <div class="search-filter" aria-label="문서 검색 범위">
+      <span class="filter-chip active">전체</span>
+      <span class="filter-chip">제목</span>
+      <span class="filter-chip">본문</span>
+      <span class="filter-chip">최근 문서</span>
+    </div>
+  </header>
+
+  <div class="search-content">
+    <h3>
+      {% if keyword %}"{{ keyword }}" 검색 결과{% else %}검색을 시작하세요{% endif %}
+    </h3>
+    {% if keyword %}
+      {% if documents %}
+      <div class="search-results">
+        {% for document in documents %}
+        <article class="search-result-item">
+          <div>
+            <h4>{{ document.title }}</h4>
+            {% if document.category %}
+            <small>📁 {{ document.category.name }}</small>
+            {% endif %}
+            <p>{{ document.content }}</p>
+          </div>
+          <small>{{ document.created_at }}</small>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="search-empty">검색 결과가 없습니다.</p>
+      {% endif %}
+    {% else %}
+    <p class="search-empty">
+      검색어를 입력하면 저장된 문서 결과가 여기에 표시됩니다.
+    </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

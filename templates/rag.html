@@ -1,0 +1,82 @@
+{% extends "dashboard_base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/rag.css" />
+{% endblock %}
+
+{% block content %}
+<section class="rag-container">
+  <header class="rag-header">
+    <a class="rag-back" href="/dashboard?username={{ username }}">메인으로</a>
+    <h2>RAG 질문</h2>
+    <p>저장된 문서를 기반으로 질문하고 관련 근거를 함께 확인하세요.</p>
+
+    <form class="rag-form" action="/rag/ask" method="post">
+      <input type="hidden" name="username" value="{{ username }}" />
+      {% if categories %}
+      <select
+        name="category_id"
+        style="
+          width: 100%;
+          padding: 8px 12px;
+          margin-bottom: 8px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+        "
+      >
+        <option value="">전체 카테고리</option>
+        {% for category in categories %}
+        <option value="{{ category.id }}">📁 {{ category.name }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      <textarea
+        id="question"
+        name="question"
+        rows="4"
+        placeholder="저장된 문서에 대해 질문하세요"
+        required
+      >{{ rag_question }}</textarea>
+      <button type="submit">관련 문서 찾기</button>
+    </form>
+  </header>
+
+  <div class="rag-content">
+    {% if rag_error %}
+    <p class="rag-error">{{ rag_error }}</p>
+    {% endif %}
+    {% if rag_answer %}
+    <article class="rag-answer-card">
+      <span class="rag-label">Answer</span>
+      <h3>RAG 결과</h3>
+      <div class="rag-answer-text">{{ rag_answer }}</div>
+    </article>
+    {% else %}
+    <article class="rag-empty-card">
+      <span class="rag-label">Ready</span>
+      <h3>질문을 입력하세요</h3>
+      <p>답변과 참고 문서가 이 영역에 표시됩니다.</p>
+    </article>
+    {% endif %}
+    {% if rag_sources %}
+    <section class="rag-sources">
+      <h3>참고 문서</h3>
+      <div class="rag-source-list">
+        {% for source in rag_sources %}
+        <a
+          class="rag-source-item"
+          href="/documents/{{ source.document_id }}?username={{ username }}&highlight={{ source.chunks | tojson | urlencode }}"
+          target="_self"
+        >
+          <h4>📄 {{ source.title }}</h4>
+          {% for excerpt in source.excerpts %}
+          <p class="rag-excerpt">{{ excerpt }}</p>
+          {% endfor %}
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

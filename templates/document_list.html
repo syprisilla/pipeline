@@ -1,0 +1,131 @@
+{% extends "dashboard_base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/list.css" />
+{% endblock %}
+
+{% block content %}
+<section class="list-container">
+  <header class="list-header">
+    <a class="list-back" href="/dashboard?username={{ username }}">메인으로</a>
+    <h2>문서 목록</h2>
+    <p>저장된 문서를 한 곳에서 확인하고 검색/RAG에 사용할 자료를 점검하세요.</p>
+  </header>
+
+  {% if categories %}
+  <div class="list-category-bar">
+    <a
+      class="list-category-chip {% if not selected_category_id %}active{% endif %}"
+      href="/documents/list?username={{ username }}"
+      >전체</a
+    >
+    {% for category in categories %}
+    <a
+      class="list-category-chip {% if selected_category_id == category.id %}active{% endif %}"
+      href="/documents/list?username={{ username }}&category_id={{ category.id }}"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="14"
+        height="14"
+        fill="currentColor"
+        class="bi bi-folder"
+        viewBox="0 0 16 16"
+      >
+        <path
+          d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139q.323-.119.684-.12h5.396z"
+        />
+      </svg>
+      {{ category.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="list-content">
+    <div class="list-title-row">
+      <div>
+        <p class="list-eyebrow">Document Table</p>
+        <h3>저장 문서</h3>
+      </div>
+      <p class="list-count">총 {{ documents|length }}개</p>
+    </div>
+
+    <form class="list-live-search" action="#" onsubmit="return false;">
+      <input
+        id="documentLiveSearch"
+        type="search"
+        placeholder="문서 제목, 카테고리, 내용을 검색하세요"
+        aria-label="문서 목록 검색"
+      />
+    </form>
+
+    {% if documents %}
+    <div class="document-table-wrap">
+      <table class="document-table" id="documentTable">
+        <thead>
+          <tr>
+            <th>제목</th>
+            <th>카테고리</th>
+            <th>내용 미리보기</th>
+            <th>등록일</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for document in documents %}
+          <tr
+            data-search="{{ document.title }} {% if document.category %}{{ document.category.name }}{% else %}카테고리 없음{% endif %} {{ document.content }}"
+          >
+            <td class="document-title-cell">{{ document.title }}</td>
+            <td>
+              <span class="document-category-pill">
+                {% if document.category %}{{ document.category.name }}{% else %}없음{% endif %}
+              </span>
+            </td>
+            <td class="document-preview-cell">
+              <span>{{ document.content }}</span>
+            </td>
+            <td class="document-date-cell">{{ document.created_at }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="list-empty document-filter-empty" id="documentFilterEmpty">
+      검색 결과가 없습니다.
+    </p>
+    {% else %}
+    <p class="list-empty">등록된 문서가 없습니다.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const documentSearchInput = document.getElementById("documentLiveSearch");
+  const documentRows = document.querySelectorAll("#documentTable tbody tr");
+  const documentEmpty = document.getElementById("documentFilterEmpty");
+
+  if (documentSearchInput) {
+    documentSearchInput.addEventListener("input", () => {
+      const keyword = documentSearchInput.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      documentRows.forEach((row) => {
+        const targetText = row.dataset.search.toLowerCase();
+        const isVisible = targetText.includes(keyword);
+        row.hidden = !isVisible;
+
+        if (isVisible) {
+          visibleCount += 1;
+        }
+      });
+
+      if (documentEmpty) {
+        documentEmpty.classList.toggle("visible", visibleCount === 0);
+      }
+    });
+  }
+</script>
+{% endblock %}

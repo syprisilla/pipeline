@@ -195,7 +195,7 @@ def new_document_page(request: Request, username: str, db: Session = Depends(get
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "document_create.html",
         dashboard_context(username, documents, categories, active_view="create"),
     )
 
@@ -207,7 +207,7 @@ def search_document_page(request: Request, username: str, db: Session = Depends(
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "document_search.html",
         dashboard_context(username, documents, categories, active_view="search"),
     )
 
@@ -219,7 +219,7 @@ def rag_page(request: Request, username: str, db: Session = Depends(get_db)):
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "rag.html",
         dashboard_context(username, documents, categories, active_view="rag"),
     )
 
@@ -245,7 +245,7 @@ def document_list_page(
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "document_list.html",
         dashboard_context(
             username,
             documents,
@@ -308,7 +308,7 @@ async def create_document(
         documents = db.query(Document).order_by(Document.created_at.desc()).all()
         return templates.TemplateResponse(
             request,
-            "dashboard.html",
+            "document_create.html",
             dashboard_context(
                 username,
                 documents,
@@ -332,7 +332,7 @@ async def create_document(
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "document_create.html",
         dashboard_context(
             username,
             documents,
@@ -369,7 +369,7 @@ def search_documents(
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "document_search.html",
         dashboard_context(username, documents, categories, active_view="search", keyword=keyword),
     )
 
@@ -401,7 +401,7 @@ def ask_document_question(
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "rag.html",
         dashboard_context(
             username,
             documents,
@@ -457,7 +457,7 @@ def create_category(
         categories = db.query(Category).order_by(Category.name).all()
         return templates.TemplateResponse(
             request,
-            "dashboard.html",
+            "categories.html",
             dashboard_context(
                 username,
                 documents,
@@ -475,7 +475,7 @@ def create_category(
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "categories.html",
         dashboard_context(
             username,
             documents,
@@ -506,7 +506,7 @@ def delete_category(
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "categories.html",
         dashboard_context(
             username,
             documents,
@@ -524,6 +524,6 @@ def categories_page(request: Request, username: str, db: Session = Depends(get_d
 
     return templates.TemplateResponse(
         request,
-        "dashboard.html",
+        "categories.html",
         dashboard_context(username, documents, categories, active_view="categories"),
     )

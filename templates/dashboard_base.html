@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>문서 검색 서비스</title>
+    <link rel="stylesheet" href="/static/dashboard.css" />
+    {% block styles %}{% endblock %}
+  </head>
+  <body>
+    <main class="dashboard-shell dashboard-{{ active_view }}">
+      {% block content %}{% endblock %}
+    </main>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

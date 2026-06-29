@@ -1,0 +1,82 @@
+{% extends "dashboard_base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/create.css" />
+{% endblock %}
+
+{% block content %}
+<section class="create-container">
+  <header class="create-header">
+    <a class="create-back" href="/dashboard?username={{ username }}">메인으로</a>
+    <h2>문서 등록</h2>
+    <p>직접 작성하거나 PDF, TXT, Markdown 파일을 첨부해 문서를 저장하세요.</p>
+  </header>
+
+  <div class="create-content">
+    {% if message %}
+    <p class="create-success">{{ message }}</p>
+    {% endif %}
+    {% if rag_error %}
+    <p class="create-error">{{ rag_error }}</p>
+    {% endif %}
+
+    <form
+      action="/documents"
+      method="post"
+      enctype="multipart/form-data"
+      class="create-form"
+    >
+      <input type="hidden" name="username" value="{{ username }}" />
+
+      <div class="create-field">
+        <label for="category_id">카테고리</label>
+        <select id="category_id" name="category_id">
+          <option value="">카테고리 없음</option>
+          {% for category in categories %}
+          <option value="{{ category.id }}">{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="create-field">
+        <label for="title">제목</label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          placeholder="문서 제목을 입력하세요"
+        />
+      </div>
+
+      <div class="create-field">
+        <label for="content">직접 작성</label>
+        <textarea
+          id="content"
+          name="content"
+          rows="10"
+          placeholder="문서 내용을 직접 입력하세요"
+        ></textarea>
+      </div>
+
+      <div class="create-field">
+        <label for="attachments">첨부파일</label>
+        <div class="create-upload-box">
+          <input
+            id="attachments"
+            name="attachments"
+            type="file"
+            multiple
+            accept=".pdf,.txt,.md"
+          />
+          <span>PDF, TXT, Markdown 파일을 선택할 수 있습니다.</span>
+        </div>
+      </div>
+
+      <div class="create-actions">
+        <button type="submit">문서 저장</button>
+        <a href="/dashboard?username={{ username }}">취소</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
