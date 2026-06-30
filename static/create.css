@@ -76,10 +76,50 @@
   gap: 24px;
 }
 
-.kaggle-form {
-  margin-bottom: 28px;
-  padding-bottom: 28px;
-  border-bottom: 1px solid #e5eaf2;
+.create-mode-bar {
+  margin-bottom: 30px;
+  display: inline-flex;
+}
+
+.create-mode-button {
+  min-height: 48px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--create-primary);
+  color: var(--create-white);
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 12px 24px rgba(74, 111, 227, 0.22);
+  transition: var(--create-transition);
+}
+
+.create-mode-button:hover {
+  background: var(--create-primary-dark);
+}
+
+.kaggle-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kaggle-flow span {
+  min-height: 48px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d9e2ff;
+  border-radius: 10px;
+  background: #f6f8ff;
+  color: var(--create-primary-dark);
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
 }
 
 .create-field {
@@ -253,5 +293,14 @@
 
   .create-actions {
     flex-direction: column;
+  }
+
+  .create-mode-bar,
+  .create-mode-button {
+    width: 100%;
+  }
+
+  .kaggle-flow {
+    grid-template-columns: 1fr;
   }
 }

@@ -1217,6 +1217,18 @@ def new_document_page(request: Request, username: str, db: Session = Depends(get
     )
 
 
+@app.get("/documents/kaggle")
+def new_kaggle_document_page(request: Request, username: str, db: Session = Depends(get_db)):
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
+
+    return templates.TemplateResponse(
+        request,
+        "kaggle_create.html",
+        dashboard_context(username, documents, categories, active_view="create"),
+    )
+
+
 @app.get("/documents/search-page")
 def search_document_page(request: Request, username: str, db: Session = Depends(get_db)):
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
@@ -1329,11 +1341,11 @@ async def create_document(
             dashboard_context(
                 username,
                 documents,
-            categories,
-            active_view="create",
-            rag_error=error or "직접 작성 내용 또는 업로드 파일이 필요합니다.",
-        ),
-    )
+                categories,
+                active_view="create",
+                rag_error=error or "직접 작성 내용 또는 업로드 파일이 필요합니다.",
+            ),
+        )
 
     db.commit()
 
@@ -1396,7 +1408,7 @@ def create_kaggle_document(
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
     return templates.TemplateResponse(
         request,
-        "document_create.html",
+        "kaggle_create.html",
         dashboard_context(
             username,
             documents,
