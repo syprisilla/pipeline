@@ -76,6 +76,12 @@
   gap: 24px;
 }
 
+.kaggle-form {
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #e5eaf2;
+}
+
 .create-field {
   display: flex;
   flex-direction: column;

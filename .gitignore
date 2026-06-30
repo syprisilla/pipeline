@@ -13,6 +13,10 @@ ENV/
 .env
 .env.*
 !.env.example
+kaggle.json
+access_token
+.kaggle/
+**/.kaggle/
 
 # Local database and runtime files
 *.db
@@ -26,6 +30,10 @@ chroma_db/
 .chroma/
 data_files/*
 !data_files/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
 .matplotlib_cache/
 
 # Editor and OS files

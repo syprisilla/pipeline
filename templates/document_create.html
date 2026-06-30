@@ -9,7 +9,7 @@
   <header class="create-header">
     <a class="create-back" href="/dashboard?username={{ username }}">메인으로</a>
     <h2>공공데이터 수집</h2>
-    <p>공공데이터 설명, CSV, PDF, TXT, Markdown 파일을 저장하고 RAG 검색용 텍스트로 색인하세요.</p>
+    <p>공공데이터 설명, Kaggle 데이터셋, CSV, PDF, TXT, Markdown 파일을 저장하고 RAG 검색용 텍스트로 색인하세요.</p>
   </header>
 
   <div class="create-content">
@@ -19,6 +19,36 @@
     {% if rag_error %}
     <p class="create-error">{{ rag_error }}</p>
     {% endif %}
+
+    <form action="/documents/kaggle" method="post" class="create-form kaggle-form">
+      <input type="hidden" name="username" value="{{ username }}" />
+
+      <div class="create-field">
+        <label for="kaggle_category_id">카테고리</label>
+        <select id="kaggle_category_id" name="category_id">
+          <option value="">카테고리 없음</option>
+          {% for category in categories %}
+          <option value="{{ category.id }}">{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="create-field">
+        <label for="dataset_id">Kaggle Dataset ID</label>
+        <input
+          id="dataset_id"
+          name="dataset_id"
+          type="text"
+          placeholder="예: uciml/iris"
+          value="{{ kaggle_dataset_id }}"
+          required
+        />
+      </div>
+
+      <div class="create-actions">
+        <button type="submit">Kaggle 수집·전처리</button>
+      </div>
+    </form>
 
     <form
       action="/documents"

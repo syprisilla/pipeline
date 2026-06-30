@@ -2,6 +2,7 @@ import hashlib
 import json
 import math
 import os
+from io import StringIO
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -103,8 +104,47 @@ def split_text_into_chunks(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
     return chunks
 
 
+def build_csv_context_prefix(document):
+    if not document.title.lower().endswith(".csv"):
+        return ""
+
+    try:
+        import pandas as pd
+
+        dataframe = pd.read_csv(StringIO(document.content), nrows=20)
+    except Exception:
+        first_line = document.content.splitlines()[0] if document.content.splitlines() else ""
+        columns = [column.strip() for column in first_line.split(",") if column.strip()]
+        if not columns:
+            return ""
+        return (
+            "CSV 데이터 요약\n"
+            f"컬럼 목록: {', '.join(columns)}\n"
+            f"컬럼 개수: {len(columns)}개\n"
+        )
+
+    columns = dataframe.columns.tolist()
+    numeric_columns = dataframe.select_dtypes(include="number").columns.tolist()
+    categorical_columns = dataframe.select_dtypes(exclude="number").columns.tolist()
+    return (
+        "CSV 데이터 요약\n"
+        f"컬럼 목록: {', '.join(columns)}\n"
+        f"컬럼 개수: {len(columns)}개\n"
+        f"수치형 컬럼: {', '.join(numeric_columns) if numeric_columns else '없음'}\n"
+        f"범주형 컬럼: {', '.join(categorical_columns) if categorical_columns else '없음'}\n"
+    )
+
+
 def document_to_chunks(document):
+    csv_prefix = build_csv_context_prefix(document)
     chunks = split_text_into_chunks(document.content)
+
+    if csv_prefix:
+        chunks = [csv_prefix] + [
+            f"{csv_prefix}\nCSV 행 데이터 일부:\n{chunk}"
+            for chunk in chunks
+        ]
+
     return [
         {
             "id": f"{document.id}-{index}",

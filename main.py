@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
+from kaggle_pipeline import download_and_preprocess_dataset
 from models import Category, Document, User
 from rag import ask_rag, upsert_document
 
@@ -118,6 +119,7 @@ def dashboard_context(
     target_column="",
     ml_result=None,
     preprocess_summary=None,
+    kaggle_dataset_id="",
 ):
     return {
         "username": username,
@@ -140,6 +142,7 @@ def dashboard_context(
         "target_column": target_column,
         "ml_result": ml_result,
         "preprocess_summary": preprocess_summary,
+        "kaggle_dataset_id": kaggle_dataset_id,
     }
 
 
@@ -1326,11 +1329,11 @@ async def create_document(
             dashboard_context(
                 username,
                 documents,
-                categories,
-                active_view="create",
-                error=error or "직접 작성 내용 또는 업로드 파일이 필요합니다.",
-            ),
-        )
+            categories,
+            active_view="create",
+            rag_error=error or "직접 작성 내용 또는 업로드 파일이 필요합니다.",
+        ),
+    )
 
     db.commit()
 
@@ -1352,8 +1355,56 @@ async def create_document(
             documents,
             categories,
             active_view="create",
-            error=error,
+            rag_error=error,
             message=f"문서 {saved_count}개가 저장되었습니다.",
+        ),
+    )
+
+
+@app.post("/documents/kaggle")
+def create_kaggle_document(
+    request: Request,
+    username: str = Form(...),
+    dataset_id: str = Form(...),
+    category_id: int = Form(None),
+    db: Session = Depends(get_db),
+):
+    categories = db.query(Category).order_by(Category.name).all()
+    cleaned_dataset_id = dataset_id.strip()
+
+    try:
+        kaggle_result = download_and_preprocess_dataset(cleaned_dataset_id)
+        document = Document(
+            title=kaggle_result["document_title"],
+            content=kaggle_result["processed_csv"],
+            category_id=category_id,
+        )
+        db.add(document)
+        db.commit()
+        db.refresh(document)
+        upsert_document(document)
+        message = (
+            f"{cleaned_dataset_id} Kaggle 데이터셋을 수집하고 전처리한 CSV를 저장했습니다. "
+            f"metadata: {kaggle_result['metadata_path']}"
+        )
+        error = None
+    except Exception as exc:
+        db.rollback()
+        message = None
+        error = str(exc)
+
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    return templates.TemplateResponse(
+        request,
+        "document_create.html",
+        dashboard_context(
+            username,
+            documents,
+            categories,
+            active_view="create",
+            rag_error=error,
+            message=message,
+            kaggle_dataset_id=cleaned_dataset_id,
         ),
     )
 
