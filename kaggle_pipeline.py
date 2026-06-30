@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,6 +32,8 @@ def slugify_dataset_id(dataset_id: str) -> str:
 
 def _run_kaggle_download(dataset_id: str, raw_dir: Path) -> None:
     command = [
+        sys.executable,
+        "-m",
         "kaggle",
         "datasets",
         "download",
@@ -39,9 +42,22 @@ def _run_kaggle_download(dataset_id: str, raw_dir: Path) -> None:
         "-p",
         str(raw_dir),
     ]
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+    except FileNotFoundError as error:
+        raise RuntimeError(
+            "Kaggle CLI를 실행할 수 없습니다. 현재 가상환경에 kaggle 패키지가 설치되어 있는지 확인하세요."
+        ) from error
     if result.returncode != 0:
         message = (result.stderr or result.stdout or "").strip()
+        if "No module named kaggle" in message:
+            message = "현재 가상환경에 kaggle 패키지가 설치되어 있지 않습니다. requirements.txt 설치를 먼저 실행하세요."
+        if "Could not find kaggle.json" in message or "kaggle.json" in message:
+            message = (
+                f"{message}\n"
+                "확인할 것: Kaggle API Token(kaggle.json)을 C:\\Users\\<사용자>\\.kaggle\\kaggle.json 위치에 저장하거나 "
+                "KAGGLE_USERNAME, KAGGLE_KEY 환경변수를 설정하세요."
+            )
         if "403" in message or "Forbidden" in message:
             message = (
                 f"{message}\n"
@@ -77,6 +93,18 @@ def preprocess_csv(dataframe: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     ]
     processed = processed.drop_duplicates()
 
+    zero_as_missing = {}
+    normalized_columns = {column.lower().replace("_", "") for column in processed.columns}
+    is_heart_dataset = {"age", "cholesterol", "maxhr", "heartdisease"}.issubset(normalized_columns)
+    if is_heart_dataset:
+        for column in ("cholesterol", "restingbp"):
+            if column in processed.columns:
+                numeric_series = pd.to_numeric(processed[column], errors="coerce")
+                zero_count = int((numeric_series == 0).sum())
+                if zero_count:
+                    processed[column] = numeric_series.mask(numeric_series == 0)
+                    zero_as_missing[column] = zero_count
+
     for column in processed.columns:
         if pd.api.types.is_numeric_dtype(processed[column]):
             processed[column] = processed[column].fillna(processed[column].median())
@@ -92,6 +120,8 @@ def preprocess_csv(dataframe: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         "after_columns": len(processed.columns),
         "before_missing": before_missing,
         "after_missing": after_missing,
+        "dropped_duplicates": before_rows - len(processed),
+        "zero_as_missing": zero_as_missing,
         "numeric_columns": processed.select_dtypes(include="number").columns.tolist(),
         "categorical_columns": processed.select_dtypes(exclude="number").columns.tolist(),
     }

@@ -10,8 +10,8 @@
     <a class="eda-back" href="{% if selected_document %}/eda/{{ selected_document.id }}?username={{ username }}{% else %}/dashboard?username={{ username }}{% endif %}">
       {% if selected_document %}분석 선택으로{% else %}메인으로{% endif %}
     </a>
-    <h2>{% if selected_document %}{{ selected_document.title }} 분석{% else %}EDA 시각화{% endif %}</h2>
-    <p>전처리된 CSV의 주요 수치 변수, 날짜별 변화, 요일별 패턴, 변수 간 관계를 탐색합니다.</p>
+    <h2>{% if analysis_header.title %}{{ analysis_header.title }}{% elif selected_document %}{{ selected_document.title }} 분석{% else %}EDA 시각화{% endif %}</h2>
+    <p>{% if analysis_header.subtitle %}{{ analysis_header.subtitle }}{% else %}전처리된 CSV의 주요 수치 변수, 날짜별 변화, 요일별 패턴, 변수 간 관계를 탐색합니다.{% endif %}</p>
   </header>
 
   <div class="eda-content">
@@ -77,6 +77,38 @@
 
     {% if selected_document and eda_charts %}
     <section class="eda-chart-grid" aria-label="matplotlib 시각화 결과">
+      {% if eda_charts.heart_target %}
+      <article class="eda-chart-card wide">
+        <h3>HeartDisease 발생 여부 분포</h3>
+        <img src="{{ eda_charts.heart_target }}" alt="HeartDisease 클래스 분포 그래프" />
+        <p>{{ eda_charts.heart_target_note }}</p>
+      </article>
+      {% endif %}
+
+      {% if eda_charts.heart_boxplot_by_target %}
+      <article class="eda-chart-card wide">
+        <h3>HeartDisease 여부별 핵심 수치 feature boxplot</h3>
+        <img src="{{ eda_charts.heart_boxplot_by_target }}" alt="HeartDisease 여부별 수치 feature boxplot" />
+        <p>{{ eda_charts.heart_boxplot_by_target_note }}</p>
+      </article>
+      {% endif %}
+
+      {% if eda_charts.heart_category_risk %}
+      <article class="eda-chart-card wide">
+        <h3>범주형 검진 정보별 발생 비율</h3>
+        <img src="{{ eda_charts.heart_category_risk }}" alt="범주형 feature별 HeartDisease 발생 비율 그래프" />
+        <p>{{ eda_charts.heart_category_risk_note }}</p>
+      </article>
+      {% endif %}
+
+      {% if eda_charts.heart_st_slope_risk %}
+      <article class="eda-chart-card wide">
+        <h3>ST slope별 HeartDisease 발생 비율</h3>
+        <img src="{{ eda_charts.heart_st_slope_risk }}" alt="ST slope별 HeartDisease 발생 비율 그래프" />
+        <p>{{ eda_charts.heart_st_slope_risk_note }}</p>
+      </article>
+      {% endif %}
+
       {% if eda_charts.csv_numeric %}
       <article class="eda-chart-card wide">
         <h3>주요 수치 변수 평균/최댓값</h3>
@@ -113,6 +145,86 @@
       </article>
       {% endif %}
     </section>
+
+    {% if ml_result %}
+    <section class="ml-panel" aria-label="심장질환 예측 모델 결과">
+      <div class="ml-explain-card">
+        <div>
+          <span>Modeling Result</span>
+          <h3>{{ ml_result.target_column }} 예측 모델</h3>
+          <p>{{ ml_result.explanation.result }}</p>
+        </div>
+        <dl class="ml-explain-list">
+          <div>
+            <dt>데이터</dt>
+            <dd>{{ ml_result.explanation.dataset }}</dd>
+          </div>
+          <div>
+            <dt>Target</dt>
+            <dd>{{ ml_result.explanation.target }}</dd>
+          </div>
+          <div>
+            <dt>Feature</dt>
+            <dd>{{ ml_result.explanation.features }}</dd>
+          </div>
+          <div>
+            <dt>전처리</dt>
+            <dd>{{ ml_result.explanation.preprocess }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="ml-summary-grid">
+        <article>
+          <span>Task</span>
+          <strong>{{ ml_result.task_type }}</strong>
+        </article>
+        <article>
+          <span>Train</span>
+          <strong>{{ ml_result.train_count }}</strong>
+        </article>
+        <article>
+          <span>Validation</span>
+          <strong>{{ ml_result.valid_count }}</strong>
+        </article>
+        <article>
+          <span>Best Model</span>
+          <strong>{{ ml_result.best_model.name }}</strong>
+        </article>
+      </div>
+
+      <div class="ml-score-layout">
+        <article class="ml-score-card">
+          <h3>모델별 {{ ml_result.primary_metric }} 비교</h3>
+          <img src="{{ ml_result.score_chart }}" alt="모델별 성능 비교 그래프" />
+          <p class="ml-best">최고 모델: {{ ml_result.best_model.name }} / 검증 {{ ml_result.primary_metric }} {{ ml_result.best_model.valid_score }} / {{ ml_result.secondary_metric }} {{ ml_result.best_model.secondary_score }}</p>
+        </article>
+        <article class="ml-score-card">
+          <h3>Score Table</h3>
+          <table class="ml-score-table">
+            <thead>
+              <tr>
+                <th>모델</th>
+                <th>Train</th>
+                <th>Valid</th>
+                <th>{{ ml_result.secondary_metric }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for score in ml_result.scores %}
+              <tr>
+                <td>{{ score.name }}</td>
+                <td>{{ score.train_score }}</td>
+                <td>{{ score.valid_score }}</td>
+                <td>{{ score.secondary_score }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </article>
+      </div>
+    </section>
+    {% endif %}
     {% elif selected_document and not error %}
     <article class="eda-empty">
       <h3>시각화할 수치 데이터를 찾지 못했습니다</h3>

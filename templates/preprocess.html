@@ -10,8 +10,8 @@
     <a class="eda-back" href="{% if selected_document %}/eda/{{ selected_document.id }}?username={{ username }}{% else %}/dashboard?username={{ username }}{% endif %}">
       {% if selected_document %}분석 선택으로{% else %}메인으로{% endif %}
     </a>
-    <h2>{% if selected_document %}{{ selected_document.title }} 전처리{% else %}전처리 점검{% endif %}</h2>
-    <p>CSV 파일을 분석하기 전에 결측치, 날짜 변환, 이상치, 수치형 변수, 범주형 인코딩 상태를 확인합니다.</p>
+    <h2>{% if analysis_header.title %}{{ analysis_header.title }}{% elif selected_document %}{{ selected_document.title }} 전처리{% else %}전처리 점검{% endif %}</h2>
+    <p>{% if analysis_header.subtitle %}{{ analysis_header.subtitle }}{% else %}CSV 파일을 분석하기 전에 결측치, 날짜 변환, 이상치, 수치형 변수, 범주형 인코딩 상태를 확인합니다.{% endif %}</p>
   </header>
 
   <div class="eda-content">
@@ -76,6 +76,40 @@
     {% endif %}
 
     {% if selected_document and eda_charts %}
+    {% if eda_charts.preprocess_table_rows %}
+    <section class="preprocess-detail-panel" aria-label="전처리 전후 요약">
+      <div class="preprocess-detail-heading">
+        <span>Preprocessing Evidence</span>
+        <h3>가공 전/후 변화</h3>
+        {% if eda_charts.preprocess_detail_note %}
+        <p>{{ eda_charts.preprocess_detail_note }}</p>
+        {% endif %}
+      </div>
+      <div class="preprocess-table-wrap">
+        <table class="preprocess-table">
+          <thead>
+            <tr>
+              <th>처리 항목</th>
+              <th>처리 전</th>
+              <th>처리 후</th>
+              <th>처리 방법</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in eda_charts.preprocess_table_rows %}
+            <tr>
+              <td>{{ row.item }}</td>
+              <td>{{ row.before }}</td>
+              <td>{{ row.after }}</td>
+              <td>{{ row.method }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+
     <section class="eda-chart-grid" aria-label="전처리 시각화 결과">
       {% if eda_charts.missing_status %}
       <article class="preprocess-status-card wide">
@@ -87,7 +121,7 @@
 
       {% if eda_charts.missing_by_column %}
       <article class="eda-chart-card wide">
-        <h3>컬럼별 결측치 개수</h3>
+        <h3>{{ eda_charts.missing_by_column_title or '컬럼별 결측치 개수' }}</h3>
         <img src="{{ eda_charts.missing_by_column }}" alt="컬럼별 결측치 개수 그래프" />
         <p>{{ eda_charts.missing_by_column_note }}</p>
       </article>
@@ -95,7 +129,7 @@
 
       {% if eda_charts.missing_before_after %}
       <article class="eda-chart-card wide">
-        <h3>전처리 전/후 결측치 비교</h3>
+        <h3>{{ eda_charts.missing_before_after_title or '전처리 전/후 결측치 비교' }}</h3>
         <img src="{{ eda_charts.missing_before_after }}" alt="전처리 전후 결측치 비교 그래프" />
         <p>{{ eda_charts.missing_before_after_note }}</p>
       </article>

@@ -27,6 +27,96 @@ templates = Jinja2Templates(directory="templates")
 
 Base.metadata.create_all(bind=engine)
 
+HEART_DATASET_COLUMNS = {
+    "age",
+    "sex",
+    "chestpaintype",
+    "restingbp",
+    "cholesterol",
+    "fastingbs",
+    "restingecg",
+    "maxhr",
+    "exerciseangina",
+    "oldpeak",
+    "st_slope",
+    "heartdisease",
+}
+
+
+def is_heart_dataset(dataframe=None, title=""):
+    title_text = (title or "").lower()
+    title_match = any(keyword in title_text for keyword in ("heart", "cardio", "심장"))
+    if dataframe is None:
+        return title_match
+
+    normalized_columns = {column.lower().replace("_", "") for column in dataframe.columns}
+    column_hits = len(HEART_DATASET_COLUMNS & normalized_columns)
+    return title_match or column_hits >= 6
+
+
+def heart_column(dataframe, normalized_name):
+    target = normalized_name.lower().replace("_", "")
+    for column in dataframe.columns:
+        if column.lower().replace("_", "") == target:
+            return column
+    return None
+
+
+def heart_numeric_columns(dataframe):
+    preferred_columns = ["Age", "MaxHR", "Oldpeak", "Cholesterol"]
+    return [
+        column
+        for column in [heart_column(dataframe, preferred_column) for preferred_column in preferred_columns]
+        if column and column in dataframe.columns
+    ]
+
+
+def build_heart_feature_guide(document):
+    if not document:
+        return []
+
+    content_preview = (document.content or "")[:1000].lower().replace("_", "")
+    looks_like_heart = is_heart_dataset(title=document.title) or (
+        "heartdisease" in content_preview and "cholesterol" in content_preview
+    )
+    if not looks_like_heart:
+        return []
+
+    return [
+        {"feature": "age", "meaning": "나이", "usage": "연령대별 심장질환 발생 경향 확인"},
+        {"feature": "restingbp", "meaning": "안정 시 혈압", "usage": "혈압 분포와 이상치 확인"},
+        {"feature": "cholesterol", "meaning": "콜레스테롤 수치", "usage": "0값 보정 및 질병 발생군/비발생군 비교"},
+        {"feature": "fastingbs", "meaning": "공복 혈당 여부", "usage": "혈당 조건에 따른 발생 비율 비교"},
+        {"feature": "restingecg", "meaning": "안정 심전도 결과", "usage": "심전도 그룹별 발생 차이 확인"},
+        {"feature": "maxhr", "meaning": "최대 심박수", "usage": "운동 능력과 발생 여부 관계 확인"},
+        {"feature": "exerciseangina", "meaning": "운동 유발 협심증 여부", "usage": "운동 중 흉통 여부별 발생 비율 비교"},
+        {"feature": "oldpeak", "meaning": "운동 후 ST depression", "usage": "심전도 변화량 분포 비교"},
+        {"feature": "chestpaintype", "meaning": "흉통 유형", "usage": "흉통 유형별 HeartDisease 발생 비율"},
+        {"feature": "st_slope", "meaning": "ST 구간 기울기", "usage": "핵심 범주형 변수로 발생 비율 비교"},
+        {"feature": "heartdisease", "meaning": "심장질환 발생 여부", "usage": "예측 target"},
+    ]
+
+
+def build_analysis_header(document, view_name):
+    if not document:
+        return {}
+
+    if not is_heart_dataset(title=document.title):
+        return {}
+
+    view_titles = {
+        "select": "심장질환 예측 데이터 분석 선택",
+        "preprocess": "심장질환 예측 데이터 전처리",
+        "eda": "심장질환 예측 데이터 EDA",
+    }
+    return {
+        "title": view_titles.get(view_name, "심장질환 예측 데이터 분석"),
+        "subtitle": (
+            f"원본 데이터셋 파일명은 {document.title}이지만, 실제 예측 target은 HeartDisease입니다. "
+            "따라서 서비스 제목과 분석 설명은 심장질환 예측으로 통일합니다."
+        ),
+    }
+
 
 def normalize_search_tokens(text):
     normalized = text.lower()
@@ -65,6 +155,8 @@ def normalize_search_tokens(text):
         "가격": "price",
         "기상": "weather",
         "날씨": "weather",
+        "심장": "heart",
+        "질환": "disease",
     }
     for token, synonym in synonyms.items():
         if token in token_set:
@@ -125,6 +217,8 @@ def dashboard_context(
     kaggle_dataset_id="",
     crawl_url="",
     source_info=None,
+    feature_guide=None,
+    analysis_header=None,
 ):
     return {
         "username": username,
@@ -150,6 +244,8 @@ def dashboard_context(
         "kaggle_dataset_id": kaggle_dataset_id,
         "crawl_url": crawl_url,
         "source_info": source_info or {},
+        "feature_guide": feature_guide or [],
+        "analysis_header": analysis_header or {},
     }
 
 
@@ -292,10 +388,16 @@ def build_document_source_info(document):
             }
         if source == "kaggle":
             dataset_id = metadata.get("dataset_id", "")
+            detail = f"{dataset_id} 데이터셋을 다운로드하고 CSV 전처리 후 저장한 데이터입니다."
+            if is_heart_dataset(title=document.title):
+                detail = (
+                    f"원본 Kaggle 데이터셋 파일명은 {dataset_id}이지만, 실제 예측 target은 HeartDisease입니다. "
+                    "이 서비스에서는 heart failure가 아니라 심장질환 발생 여부 예측 데이터로 해석합니다."
+                )
             return {
                 "label": "Kaggle 데이터셋",
                 "origin": metadata.get("url") or f"https://www.kaggle.com/datasets/{dataset_id}",
-                "detail": f"{dataset_id} 데이터셋을 다운로드하고 CSV 전처리 후 저장한 데이터입니다.",
+                "detail": detail,
                 "category": category_name,
                 "saved_at": created_at,
                 "processed_file": metadata.get("processed_file", ""),
@@ -303,10 +405,16 @@ def build_document_source_info(document):
 
     if document.title.endswith("_processed.csv"):
         dataset_id = document.title.removesuffix("_processed.csv").replace("__", "/")
+        detail = f"{dataset_id} 데이터셋을 전처리해 저장한 CSV입니다."
+        if is_heart_dataset(title=document.title):
+            detail = (
+                f"원본 Kaggle 데이터셋 파일명은 {dataset_id}이지만, 실제 예측 target은 HeartDisease입니다. "
+                "이 서비스에서는 심장질환 발생 여부 예측 데이터로 해석합니다."
+            )
         return {
             "label": "Kaggle 데이터셋",
             "origin": f"https://www.kaggle.com/datasets/{dataset_id}",
-            "detail": f"{dataset_id} 데이터셋을 전처리해 저장한 CSV입니다.",
+            "detail": detail,
             "category": category_name,
             "saved_at": created_at,
             "processed_file": "",
@@ -418,7 +526,10 @@ def build_csv_profile(document, dataframe, pd):
 
     lower_columns = {column.lower(): column for column in dataframe.columns}
     lower_title = title.lower()
-    if any(keyword in lower_title for keyword in ("weather", "기상")) or {
+    if is_heart_dataset(dataframe, title):
+        data_domain = "심장질환 발생 예측 데이터"
+        data_character = "환자의 나이, 흉통 유형, 콜레스테롤, 최대 심박수, 운동성 협심증 같은 검진 feature로 HeartDisease 발생 여부를 분석하고 예측하는 데 적합합니다."
+    elif any(keyword in lower_title for keyword in ("weather", "기상")) or {
         "temperature",
         "precipitation",
         "visibility",
@@ -435,7 +546,10 @@ def build_csv_profile(document, dataframe, pd):
         data_domain = "CSV 기반 공공데이터"
         data_character = "여러 행의 관측값과 변수로 구성되어 전체 분포, 결측치, 변수 관계를 탐색하는 데 적합합니다."
 
-    period_text = "명확한 날짜 범위는 감지되지 않았습니다."
+    if is_heart_dataset(dataframe, title):
+        period_text = "개별 환자 검진 레코드 기반 데이터로, 날짜 컬럼 대신 환자별 feature와 HeartDisease target을 포함합니다."
+    else:
+        period_text = "명확한 날짜 범위는 감지되지 않았습니다."
     if date_columns:
         date_column = date_columns[0]
         parsed_dates = pd.to_datetime(dataframe[date_column], errors="coerce").dropna()
@@ -459,6 +573,10 @@ def build_csv_profile(document, dataframe, pd):
         quality_text = f"전체 셀 중 결측치는 {missing_total}개로 약 {missing_ratio:.1f}%입니다."
     else:
         quality_text = "감지된 결측치는 없어 기본적인 데이터 완성도는 좋은 편입니다."
+
+    if is_heart_dataset(dataframe, title) and "HeartDisease" in dataframe.columns:
+        target_counts = dataframe["HeartDisease"].value_counts(dropna=False).to_dict()
+        quality_text = f"{quality_text} Target HeartDisease 클래스 분포는 {target_counts}입니다."
 
     overview = {
         "source": f"{title} 파일에서 읽어온 데이터입니다. 앱에는 '{category_name}' 카테고리로 저장되어 있으며 저장 시각은 {created_at}입니다.",
@@ -576,8 +694,90 @@ def build_eda_charts(documents, include_storage_charts=True):
             if column.lower() not in helper_numeric_names
         ]
         analysis_numeric_dataframe = numeric_dataframe[analysis_numeric_columns] if analysis_numeric_columns else numeric_dataframe
+        heart_dataset = is_heart_dataset(csv_dataframe, csv_title)
+        heart_target = heart_column(csv_dataframe, "HeartDisease")
 
-        if not analysis_numeric_dataframe.empty:
+        if heart_dataset and heart_target:
+            target_counts = csv_dataframe[heart_target].value_counts().sort_index()
+            fig_target, ax_target = plt.subplots(figsize=(7.8, 4.5))
+            target_counts.plot(kind="bar", ax=ax_target, color=["#38bdf8", "#ef4444"])
+            ax_target.set_title("HeartDisease 발생 여부 클래스 분포")
+            ax_target.set_xlabel("HeartDisease (0=비발생, 1=발생)")
+            ax_target.set_ylabel("환자 수")
+            ax_target.grid(axis="y", alpha=0.22)
+            ax_target.tick_params(axis="x", rotation=0)
+            charts["heart_target"] = make_chart_uri(fig_target)
+            positive_count = int(target_counts.get(1, 0))
+            total_count = int(target_counts.sum())
+            positive_ratio = (positive_count / total_count * 100) if total_count else 0
+            charts["heart_target_note"] = f"전체 {total_count}명 중 HeartDisease=1 환자는 {positive_count}명이며 비율은 {positive_ratio:.1f}%입니다. 모델 학습 전 클래스 불균형 여부를 확인하는 기준 그래프입니다."
+            plt.close(fig_target)
+
+            boxplot_columns = heart_numeric_columns(csv_dataframe)
+            if boxplot_columns:
+                boxplot_frame = csv_dataframe[[heart_target] + boxplot_columns].copy()
+                boxplot_frame[heart_target] = pd.to_numeric(boxplot_frame[heart_target], errors="coerce")
+                for column in boxplot_columns:
+                    boxplot_frame[column] = pd.to_numeric(boxplot_frame[column], errors="coerce")
+                    if column.lower().replace("_", "") in {"cholesterol", "restingbp"}:
+                        boxplot_frame.loc[boxplot_frame[column] == 0, column] = pd.NA
+                fig_heart_box, axes = plt.subplots(1, len(boxplot_columns), figsize=(3.0 * len(boxplot_columns), 4.4), squeeze=False)
+                for axis, column in zip(axes[0], boxplot_columns):
+                    boxplot_frame.boxplot(column=column, by=heart_target, ax=axis, grid=False)
+                    axis.set_title(column)
+                    axis.set_xlabel("HeartDisease")
+                    axis.set_ylabel("값")
+                    axis.grid(axis="y", alpha=0.22)
+                fig_heart_box.suptitle("")
+                fig_heart_box.tight_layout()
+                charts["heart_boxplot_by_target"] = make_chart_uri(fig_heart_box)
+                charts["heart_boxplot_by_target_note"] = (
+                    f"{', '.join(boxplot_columns)} 분포를 HeartDisease 발생/미발생 그룹으로 나누어 비교했습니다. "
+                    "평균/최댓값보다 그룹 간 중앙값, 사분위 범위, 이상치 차이를 더 직접적으로 확인할 수 있습니다."
+                )
+                plt.close(fig_heart_box)
+
+            category_column = heart_column(csv_dataframe, "ChestPainType") or heart_column(csv_dataframe, "ExerciseAngina")
+            if category_column:
+                category_frame = csv_dataframe[[category_column, heart_target]].copy()
+                category_frame[heart_target] = pd.to_numeric(category_frame[heart_target], errors="coerce")
+                risk_summary = category_frame.groupby(category_column)[heart_target].mean().sort_values(ascending=False)
+                fig_heart_category, ax_heart_category = plt.subplots(figsize=(7.8, 4.5))
+                risk_summary.plot(kind="bar", ax=ax_heart_category, color="#8b5cf6")
+                ax_heart_category.set_title(f"{category_column}별 HeartDisease 발생 비율")
+                ax_heart_category.set_xlabel(category_column)
+                ax_heart_category.set_ylabel("발생 비율")
+                ax_heart_category.set_ylim(0, 1)
+                ax_heart_category.grid(axis="y", alpha=0.22)
+                ax_heart_category.tick_params(axis="x", rotation=20)
+                charts["heart_category_risk"] = make_chart_uri(fig_heart_category)
+                top_category = risk_summary.index[0]
+                charts["heart_category_risk_note"] = f"{category_column} 기준 HeartDisease 평균값이 가장 높은 그룹은 {top_category}입니다. 웹 페이지에서는 범주형 검진 정보별 위험 차이를 보여줍니다."
+                plt.close(fig_heart_category)
+
+            st_slope_column = heart_column(csv_dataframe, "ST_Slope")
+            if st_slope_column:
+                st_slope_frame = csv_dataframe[[st_slope_column, heart_target]].copy()
+                st_slope_frame[heart_target] = pd.to_numeric(st_slope_frame[heart_target], errors="coerce")
+                st_slope_summary = st_slope_frame.groupby(st_slope_column)[heart_target].mean().sort_values(ascending=False)
+                fig_st_slope, ax_st_slope = plt.subplots(figsize=(7.8, 4.5))
+                st_slope_summary.plot(kind="bar", ax=ax_st_slope, color="#ef4444")
+                ax_st_slope.set_title("ST slope별 HeartDisease 발생 비율")
+                ax_st_slope.set_xlabel("ST slope")
+                ax_st_slope.set_ylabel("발생 비율")
+                ax_st_slope.set_ylim(0, 1)
+                ax_st_slope.grid(axis="y", alpha=0.22)
+                ax_st_slope.tick_params(axis="x", rotation=0)
+                charts["heart_st_slope_risk"] = make_chart_uri(fig_st_slope)
+                highest_st_slope = st_slope_summary.index[0]
+                lowest_st_slope = st_slope_summary.index[-1]
+                if "Flat" in st_slope_summary.index and "Up" in st_slope_summary.index:
+                    charts["heart_st_slope_risk_note"] = "ST slope가 Flat인 그룹에서 HeartDisease 발생 비율이 높게 나타났으며, Up 그룹은 상대적으로 낮게 나타났습니다. 따라서 ST slope는 심장질환 발생 여부를 구분하는 핵심 범주형 변수로 볼 수 있습니다."
+                else:
+                    charts["heart_st_slope_risk_note"] = f"ST slope 기준 HeartDisease 발생 비율은 {highest_st_slope} 그룹에서 가장 높고 {lowest_st_slope} 그룹에서 가장 낮게 나타났습니다. 따라서 ST slope는 심장질환 발생 여부를 구분하는 핵심 범주형 변수로 볼 수 있습니다."
+                plt.close(fig_st_slope)
+
+        if not heart_dataset and not analysis_numeric_dataframe.empty:
             numeric_summary = (
                 analysis_numeric_dataframe.agg(["mean", "max"])
                 .transpose()
@@ -736,65 +936,158 @@ def build_preprocess_charts(documents):
             for column in csv_dataframe.columns
             if column not in numeric_columns and column not in date_columns
         ]
+        heart_dataset = is_heart_dataset(csv_dataframe, first_csv["title"])
+        heart_zero_missing_columns = [
+            column
+            for column in [
+                heart_column(csv_dataframe, "Cholesterol"),
+                heart_column(csv_dataframe, "RestingBP"),
+            ]
+            if column and column in csv_dataframe.columns
+        ]
+        zero_missing_counts = {}
+        for column in heart_zero_missing_columns:
+            zero_count = int((pd.to_numeric(csv_dataframe[column], errors="coerce") == 0).sum())
+            if zero_count:
+                zero_missing_counts[column] = zero_count
+
         before_missing = csv_dataframe.isna().sum()
-        processed_dataframe = csv_dataframe.copy()
+        logical_before_missing = before_missing.copy()
+        for column, count in zero_missing_counts.items():
+            logical_before_missing[column] = logical_before_missing.get(column, 0) + count
+
+        before_duplicate_count = int(csv_dataframe.duplicated().sum())
+        processed_dataframe = csv_dataframe.drop_duplicates().copy()
 
         for column in date_columns:
             processed_dataframe[column] = pd.to_datetime(processed_dataframe[column], errors="coerce")
         for column in numeric_columns:
             numeric_series = pd.to_numeric(processed_dataframe[column], errors="coerce")
+            if heart_dataset and column in heart_zero_missing_columns:
+                numeric_series = numeric_series.mask(numeric_series == 0)
             processed_dataframe[column] = numeric_series.fillna(numeric_series.median())
         for column in categorical_columns:
             codes, _ = pd.factorize(processed_dataframe[column].fillna("missing").astype(str))
             processed_dataframe[column] = codes
 
         after_missing = processed_dataframe.isna().sum()
-        missing_summary = before_missing.sort_values(ascending=False).head(10)
-        missing_total = int(before_missing.sum())
+        if heart_dataset and zero_missing_counts:
+            missing_summary = pd.Series(zero_missing_counts).sort_values(ascending=False).head(10)
+            missing_total = sum(zero_missing_counts.values())
+        else:
+            missing_summary = logical_before_missing.sort_values(ascending=False).head(10)
+            missing_total = int(logical_before_missing.sum())
         if missing_total:
             fig_missing, ax_missing = plt.subplots(figsize=(7.8, 4.5))
             missing_summary.plot(kind="bar", ax=ax_missing, color="#f59e0b")
-            ax_missing.set_title("컬럼별 결측치 개수")
+            if heart_dataset and zero_missing_counts:
+                ax_missing.set_title("컬럼별 결측성 0값 분포")
+                charts["missing_by_column_title"] = "컬럼별 결측성 0값 분포"
+            else:
+                ax_missing.set_title("컬럼별 결측치/결측성 이상치 개수")
+                charts["missing_by_column_title"] = "컬럼별 결측치 개수"
             ax_missing.set_xlabel("컬럼")
-            ax_missing.set_ylabel("결측치")
+            ax_missing.set_ylabel("개수")
             ax_missing.grid(axis="y", alpha=0.22)
             ax_missing.tick_params(axis="x", rotation=25)
             charts["missing_by_column"] = make_chart_uri(fig_missing)
             plt.close(fig_missing)
 
-            top_missing_column = before_missing.sort_values(ascending=False).index[0]
-            charts["missing_by_column_note"] = f"전처리 전 결측치는 총 {missing_total}개이며, 가장 많이 비어 있는 컬럼은 {top_missing_column}입니다."
+            top_missing_column = logical_before_missing.sort_values(ascending=False).index[0]
+            if heart_dataset and zero_missing_counts:
+                zero_text = ", ".join(f"{column} {count}건" for column, count in zero_missing_counts.items())
+                major_column = max(zero_missing_counts, key=zero_missing_counts.get)
+                minor_parts = [
+                    f"{column}는 {count}건"
+                    for column, count in zero_missing_counts.items()
+                    if column != major_column
+                ]
+                minor_text = f", {' / '.join(minor_parts)}만 발견되었습니다" if minor_parts else "에 집중되어 있습니다"
+                if not minor_parts:
+                    major_sentence = f"전체 결측성 0값은 {major_column}에 집중되어 있습니다."
+                else:
+                    major_sentence = f"전체 결측성 0값은 {major_column}에 집중되어 있으며{minor_text}."
+                charts["missing_by_column_note"] = (
+                    f"일반적인 NaN 결측치는 발견되지 않았지만, {zero_text}의 0값은 실제 의학적 수치로 보기 어려워 결측성 이상치로 판단했습니다. "
+                    f"{major_sentence} 따라서 주요 보정 대상은 {major_column} 컬럼입니다."
+                )
+            else:
+                charts["missing_by_column_note"] = f"전처리 전 결측치는 총 {missing_total}개이며, 가장 많이 비어 있는 컬럼은 {top_missing_column}입니다."
 
-            compare_frame = pd.DataFrame(
-                {
-                    "전처리 전": before_missing,
-                    "전처리 후": after_missing,
-                }
-            ).sort_values("전처리 전", ascending=False).head(10)
+            compare_source = pd.Series(zero_missing_counts) if heart_dataset and zero_missing_counts else logical_before_missing
+            compare_after = pd.Series(0, index=compare_source.index)
+            compare_frame = pd.DataFrame({"전처리 전": compare_source, "전처리 후": compare_after}).sort_values("전처리 전", ascending=False).head(10)
             fig_compare, ax_compare = plt.subplots(figsize=(7.8, 4.5))
             compare_frame.plot(kind="bar", ax=ax_compare, color=["#f59e0b", "#50c878"])
-            ax_compare.set_title("전처리 전/후 결측치 비교")
+            if heart_dataset and zero_missing_counts:
+                ax_compare.set_title("전처리 전/후 결측성 0값 비교")
+                charts["missing_before_after_title"] = "전처리 전/후 결측성 0값 비교"
+            else:
+                ax_compare.set_title("전처리 전/후 결측치 비교")
+                charts["missing_before_after_title"] = "전처리 전/후 결측치 비교"
             ax_compare.set_xlabel("컬럼")
-            ax_compare.set_ylabel("결측치")
+            ax_compare.set_ylabel("개수")
             ax_compare.grid(axis="y", alpha=0.22)
             ax_compare.tick_params(axis="x", rotation=25)
+            if heart_dataset and zero_missing_counts:
+                x_positions = list(range(len(compare_frame.index)))
+                ax_compare.scatter(
+                    [position + 0.125 for position in x_positions],
+                    [0 for _ in x_positions],
+                    color="#50c878",
+                    edgecolor="#15803d",
+                    s=70,
+                    zorder=5,
+                    label="전처리 후 0개",
+                )
+                for position in x_positions:
+                    ax_compare.annotate(
+                        "0개",
+                        (position + 0.125, 0),
+                        textcoords="offset points",
+                        xytext=(0, 8),
+                        ha="center",
+                        color="#15803d",
+                        fontsize=9,
+                        fontweight="bold",
+                    )
+                ax_compare.legend()
             charts["missing_before_after"] = make_chart_uri(fig_compare)
-            after_total = int(after_missing.sum())
-            charts["missing_before_after_note"] = f"결측치는 전처리 전 {missing_total}개에서 전처리 후 {after_total}개로 정리됩니다."
+            after_total = int(compare_after.sum())
+            if heart_dataset and zero_missing_counts:
+                charts["missing_before_after_note"] = f"전처리 후 값은 0개라 막대 높이가 없어 보일 수 있어 초록색 마커와 '0개' 라벨로 표시했습니다. 중앙값 대체 후 결측성 0값 문제는 {after_total}개로 정리되었습니다."
+            else:
+                charts["missing_before_after_note"] = f"결측치와 결측성 이상치는 전처리 전 {missing_total}개에서 전처리 후 {after_total}개로 정리됩니다."
             plt.close(fig_compare)
         else:
-            charts["missing_status"] = "이 데이터는 전처리 전부터 감지된 결측치가 없습니다. 따라서 결측치 개수 그래프와 전/후 비교 그래프는 생략했습니다."
+            charts["missing_status"] = "이 데이터는 전처리 전부터 감지된 결측치와 결측성 이상치가 없습니다. 중복, 타입, 인코딩, 이상치 처리는 아래 전처리 표에서 함께 확인합니다."
 
+        iqr_outlier_count = 0
+        changed_count = 0
         if numeric_columns:
-            box_columns = numeric_columns[:4]
+            if heart_dataset:
+                preferred_box_columns = ["Age", "RestingBP", "Cholesterol", "FastingBS"]
+                box_columns = [
+                    column
+                    for column in [heart_column(csv_dataframe, preferred_column) for preferred_column in preferred_box_columns]
+                    if column and column in numeric_columns
+                ]
+            else:
+                box_columns = numeric_columns[:4]
             before_box = csv_dataframe[box_columns].apply(pd.to_numeric, errors="coerce")
             after_box = before_box.copy()
             for column in box_columns:
+                if heart_dataset and column in heart_zero_missing_columns:
+                    after_box[column] = after_box[column].mask(after_box[column] == 0)
+                    after_box[column] = after_box[column].fillna(after_box[column].median())
                 q1 = after_box[column].quantile(0.25)
                 q3 = after_box[column].quantile(0.75)
                 iqr = q3 - q1
                 if pd.notna(iqr) and iqr > 0:
-                    after_box[column] = after_box[column].clip(q1 - 1.5 * iqr, q3 + 1.5 * iqr)
+                    lower_bound = q1 - 1.5 * iqr
+                    upper_bound = q3 + 1.5 * iqr
+                    iqr_outlier_count += int(((after_box[column] < lower_bound) | (after_box[column] > upper_bound)).sum())
+                    after_box[column] = after_box[column].clip(lower_bound, upper_bound)
 
             fig_box, axes = plt.subplots(1, 2, figsize=(9.4, 4.5), sharey=False)
             before_box.plot(kind="box", ax=axes[0], rot=25)
@@ -805,8 +1098,79 @@ def build_preprocess_charts(documents):
                 axis.grid(axis="y", alpha=0.22)
             charts["outlier_boxplot"] = make_chart_uri(fig_box)
             changed_count = int((before_box.fillna(0) != after_box.fillna(0)).sum().sum())
-            charts["outlier_boxplot_note"] = f"{', '.join(box_columns)} 기준으로 IQR 범위를 벗어난 값 {changed_count}개가 경계값 안으로 조정됩니다."
+            if heart_dataset:
+                charts["outlier_boxplot_note"] = (
+                    f"{', '.join(box_columns)}를 기준으로 IQR 방식으로 이상치를 탐지했습니다. "
+                    f"극단값 {iqr_outlier_count}개는 제거하지 않고 상·하한값으로 조정해 데이터 수를 유지했습니다. "
+                    "cholesterol 또는 restingbp의 0값은 실제 의학적 값으로 보기 어려워 결측성 이상치로 판단하고 중앙값으로 보완했습니다."
+                )
+            else:
+                charts["outlier_boxplot_note"] = f"{', '.join(box_columns)} 기준으로 IQR 범위를 벗어난 값 {changed_count}개가 경계값 안으로 조정됩니다."
             plt.close(fig_box)
+
+        zero_missing_total = sum(zero_missing_counts.values())
+        total_adjustment_count = zero_missing_total + iqr_outlier_count
+        charts["preprocess_table_rows"] = [
+            {
+                "item": "NaN 결측치",
+                "before": f"{int(before_missing.sum())}개",
+                "after": f"{int(after_missing.sum())}개",
+                "method": "기본 결측치 검사",
+            },
+            {
+                "item": "결측성 0값",
+                "before": f"{zero_missing_total}개" if heart_dataset else "해당 없음",
+                "after": "중앙값 대체" if zero_missing_total else "해당 없음",
+                "method": "cholesterol/restingbp의 0값을 비정상 값으로 판단",
+            },
+            {
+                "item": "중복 행",
+                "before": f"{before_duplicate_count}개",
+                "after": "0개",
+                "method": "중복 레코드 제거 기준 적용",
+            },
+            {
+                "item": "데이터 타입",
+                "before": f"수치형 {len(numeric_columns)}개 / 범주형 {len(categorical_columns)}개",
+                "after": "모델 입력 타입 정리",
+                "method": "수치형 변환, 범주형 코드화",
+            },
+            {
+                "item": "IQR 이상치",
+                "before": f"IQR 기준 {iqr_outlier_count}개",
+                "after": "상·하한값 조정" if iqr_outlier_count else "해당 없음",
+                "method": "극단값을 제거하지 않고 클리핑",
+            },
+            {
+                "item": "전체 보정값",
+                "before": f"{total_adjustment_count}개",
+                "after": "보정 완료" if total_adjustment_count else "해당 없음",
+                "method": "데이터 수 유지를 위해 행 삭제 없이 값만 조정",
+            },
+            {
+                "item": "인코딩",
+                "before": f"범주형 {len(categorical_columns)}개",
+                "after": "LabelEncoding 완료",
+                "method": "문자열 범주를 숫자 코드로 변환",
+            },
+            {
+                "item": "스케일링",
+                "before": "원본 단위",
+                "after": "모델 학습 시 표준화",
+                "method": "StandardScaler로 train/validation feature 정규화",
+            },
+            {
+                "item": "최종 행 수",
+                "before": f"{len(csv_dataframe)}행",
+                "after": f"{len(processed_dataframe)}행",
+                "method": "결측/이상치 보완 후 분석용 데이터 유지",
+            },
+        ]
+        if heart_dataset:
+            charts["preprocess_detail_note"] = (
+                "일반적인 NaN 결측치는 발견되지 않았지만, cholesterol 0값과 restingbp 0값은 실제 의학적 수치로 보기 어려워 결측성 이상치로 판단했습니다. "
+                "결측성 0값은 중앙값으로 대체하고, IQR 이상치는 행을 삭제하지 않고 상·하한값으로 조정해 데이터 수를 유지했습니다."
+            )
 
         preprocess_summary = {
             "missing": f"결측치는 수치형 {len(numeric_columns)}개 컬럼은 중앙값으로, 범주형 {len(categorical_columns)}개 컬럼은 missing 값으로 보완합니다.",
@@ -1234,6 +1598,7 @@ def preprocess_detail_page(
             csv_documents=csv_documents,
             selected_document=selected_document,
             preprocess_summary=preprocess_result["preprocess_summary"],
+            analysis_header=build_analysis_header(selected_document, "preprocess"),
         ),
     )
 
@@ -1274,6 +1639,8 @@ def analysis_select_page(
             csv_documents=csv_documents,
             selected_document=selected_document,
             source_info=build_document_source_info(selected_document),
+            feature_guide=build_heart_feature_guide(selected_document),
+            analysis_header=build_analysis_header(selected_document, "select"),
         ),
     )
 
@@ -1298,12 +1665,21 @@ def eda_detail_page(
     )
     error = None
     eda_result = {"charts": {}, "csv_profiles": []}
+    ml_result = None
+    target_column = ""
 
     if not selected_document or not selected_document.title.lower().endswith(".csv"):
         error = "분석할 CSV 파일을 찾지 못했습니다."
     else:
         try:
             eda_result = build_eda_charts([selected_document], include_storage_charts=False)
+            import pandas as pd
+
+            selected_frame = pd.read_csv(StringIO(selected_document.content))
+            default_target = heart_column(selected_frame, "HeartDisease")
+            if default_target:
+                target_column = default_target
+                ml_result = build_ml_analysis(selected_document, default_target)
         except Exception as exc:
             error = str(exc)
 
@@ -1321,6 +1697,9 @@ def eda_detail_page(
             csv_profiles=eda_result["csv_profiles"],
             csv_documents=csv_documents,
             selected_document=selected_document,
+            target_column=target_column,
+            ml_result=ml_result,
+            analysis_header=build_analysis_header(selected_document, "eda"),
         ),
     )
 
