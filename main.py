@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
+from crawler_pipeline import crawl_web_page
 from kaggle_pipeline import download_and_preprocess_dataset
 from models import Category, Document, User
 from rag import ask_rag, upsert_document
@@ -120,6 +121,7 @@ def dashboard_context(
     ml_result=None,
     preprocess_summary=None,
     kaggle_dataset_id="",
+    crawl_url="",
 ):
     return {
         "username": username,
@@ -143,6 +145,7 @@ def dashboard_context(
         "ml_result": ml_result,
         "preprocess_summary": preprocess_summary,
         "kaggle_dataset_id": kaggle_dataset_id,
+        "crawl_url": crawl_url,
     }
 
 
@@ -255,6 +258,8 @@ def read_csv_documents(documents, pd):
         except Exception:
             continue
 
+        dataframe = normalize_csv_dataframe_for_analysis(dataframe, pd)
+
         if dataframe.empty:
             continue
 
@@ -267,6 +272,37 @@ def read_csv_documents(documents, pd):
         )
 
     return csv_frames
+
+
+def normalize_csv_dataframe_for_analysis(dataframe, pd):
+    normalized = dataframe.copy()
+
+    for column in normalized.columns:
+        if pd.api.types.is_numeric_dtype(normalized[column]):
+            continue
+
+        text_series = normalized[column].astype(str).str.strip()
+        numeric_series = (
+            text_series
+            .str.replace(r"\[[^\]]*\]", "", regex=True)
+            .str.replace(",", "", regex=False)
+            .str.replace("%", "", regex=False)
+            .str.replace("−", "-", regex=False)
+            .str.replace(r"^\s*$", "", regex=True)
+        )
+        converted_numeric = pd.to_numeric(numeric_series, errors="coerce")
+        numeric_ratio = converted_numeric.notna().mean()
+
+        if numeric_ratio >= 0.6:
+            normalized[column] = converted_numeric
+            continue
+
+        converted_date = pd.to_datetime(text_series, errors="coerce")
+        date_ratio = converted_date.notna().mean()
+        if date_ratio >= 0.6:
+            normalized[column] = converted_date
+
+    return normalized
 
 
 def build_csv_profile(document, dataframe, pd):
@@ -1229,6 +1265,18 @@ def new_kaggle_document_page(request: Request, username: str, db: Session = Depe
     )
 
 
+@app.get("/documents/crawl")
+def new_crawl_document_page(request: Request, username: str, db: Session = Depends(get_db)):
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    categories = db.query(Category).order_by(Category.name).all()
+
+    return templates.TemplateResponse(
+        request,
+        "crawl_create.html",
+        dashboard_context(username, documents, categories, active_view="create"),
+    )
+
+
 @app.get("/documents/search-page")
 def search_document_page(request: Request, username: str, db: Session = Depends(get_db)):
     documents = db.query(Document).order_by(Document.created_at.desc()).all()
@@ -1417,6 +1465,59 @@ def create_kaggle_document(
             rag_error=error,
             message=message,
             kaggle_dataset_id=cleaned_dataset_id,
+        ),
+    )
+
+
+@app.post("/documents/crawl")
+def create_crawl_document(
+    request: Request,
+    username: str = Form(...),
+    url: str = Form(...),
+    category_id: int = Form(None),
+    db: Session = Depends(get_db),
+):
+    categories = db.query(Category).order_by(Category.name).all()
+    cleaned_url = url.strip()
+
+    try:
+        crawl_result = crawl_web_page(cleaned_url)
+        document = Document(
+            title=crawl_result["document_title"],
+            content=crawl_result["document_content"],
+            category_id=category_id,
+        )
+        db.add(document)
+        db.commit()
+        db.refresh(document)
+        upsert_document(document)
+
+        if crawl_result["document_type"] == "csv_table":
+            data_type_message = "HTML 표를 CSV로 변환"
+        else:
+            data_type_message = "본문 텍스트를 추출"
+        message = (
+            f"{crawl_result['url']} 페이지에서 {data_type_message}해 저장했습니다. "
+            f"metadata: {crawl_result['metadata_path']}"
+        )
+        error = None
+    except Exception as exc:
+        db.rollback()
+        message = None
+        error = str(exc)
+
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+    return templates.TemplateResponse(
+        request,
+        "crawl_create.html",
+        dashboard_context(
+            username,
+            documents,
+            categories,
+            active_view="create",
+            rag_error=error,
+            message=message,
+            crawl_url=cleaned_url,
         ),
     )
 

@@ -79,6 +79,8 @@
 .create-mode-bar {
   margin-bottom: 30px;
   display: inline-flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .create-mode-button {
@@ -99,27 +101,6 @@
 
 .create-mode-button:hover {
   background: var(--create-primary-dark);
-}
-
-.kaggle-flow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.kaggle-flow span {
-  min-height: 48px;
-  padding: 0 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #d9e2ff;
-  border-radius: 10px;
-  background: #f6f8ff;
-  color: var(--create-primary-dark);
-  font-size: 14px;
-  font-weight: 800;
-  text-align: center;
 }
 
 .create-field {
@@ -300,7 +281,4 @@
     width: 100%;
   }
 
-  .kaggle-flow {
-    grid-template-columns: 1fr;
-  }
 }

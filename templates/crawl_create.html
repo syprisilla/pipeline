@@ -8,8 +8,8 @@
 <section class="create-container">
   <header class="create-header">
     <a class="create-back" href="/dashboard?username={{ username }}">메인으로</a>
-    <h2>Kaggle 데이터 수집</h2>
-    <p>Kaggle Dataset ID를 입력하면 원본 다운로드, CSV 전처리, metadata 저장, VectorDB 색인을 자동으로 실행합니다.</p>
+    <h2>웹 데이터 크롤링</h2>
+    <p>공공데이터 웹 페이지 URL을 입력하면 본문 또는 HTML 표를 추출해 DB 저장과 VectorDB 색인을 실행합니다.</p>
   </header>
 
   <div class="create-content">
@@ -20,7 +20,7 @@
     <p class="create-error">{{ rag_error }}</p>
     {% endif %}
 
-    <form action="/documents/kaggle" method="post" class="create-form">
+    <form action="/documents/crawl" method="post" class="create-form">
       <input type="hidden" name="username" value="{{ username }}" />
 
       <div class="create-field">
@@ -34,19 +34,20 @@
       </div>
 
       <div class="create-field">
-        <label for="dataset_id">Kaggle Dataset ID</label>
+        <label for="url">크롤링 URL</label>
         <input
-          id="dataset_id"
-          name="dataset_id"
+          id="url"
+          name="url"
           type="text"
-          placeholder="예: uciml/iris"
-          value="{{ kaggle_dataset_id }}"
+          placeholder="예: https://example.com/public-data-page"
+          value="{{ crawl_url }}"
           required
         />
       </div>
 
       <div class="create-actions">
-        <button type="submit">Kaggle 수집·전처리</button>
+        <button type="submit">웹 크롤링·저장</button>
+        <a href="/documents/new?username={{ username }}">취소</a>
       </div>
     </form>
   </div>
