@@ -1,7 +1,9 @@
 import os
 import base64
+import json
 import re
 from io import BytesIO, StringIO
+from pathlib import Path
 
 from dotenv import load_dotenv
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
@@ -122,6 +124,7 @@ def dashboard_context(
     preprocess_summary=None,
     kaggle_dataset_id="",
     crawl_url="",
+    source_info=None,
 ):
     return {
         "username": username,
@@ -146,6 +149,7 @@ def dashboard_context(
         "preprocess_summary": preprocess_summary,
         "kaggle_dataset_id": kaggle_dataset_id,
         "crawl_url": crawl_url,
+        "source_info": source_info or {},
     }
 
 
@@ -236,6 +240,85 @@ def build_pipeline_stats(documents, categories=None):
         "table_count": 1,
         "csv_count": sum(1 for document in documents if document.title.lower().endswith(".csv")),
         "total_chars": total_chars,
+    }
+
+
+def find_metadata_for_document(document):
+    project_root = Path(__file__).resolve().parent
+    metadata_paths = [
+        *(project_root / "data" / "processed" / "web").glob("**/metadata.json"),
+        *(project_root / "data" / "processed" / "kaggle").glob("**/metadata.json"),
+    ]
+
+    for metadata_path in metadata_paths:
+        try:
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+
+        processed_file = metadata.get("processed_file", "")
+        processed_name = os.path.basename(processed_file)
+        metadata_title = metadata.get("title", "")
+        document_title_candidates = {
+            processed_name,
+            f"{metadata_title}.csv",
+            f"{metadata_title}.txt",
+        }
+
+        if document.title in document_title_candidates:
+            return metadata
+
+    return None
+
+
+def build_document_source_info(document):
+    if not document:
+        return {}
+
+    metadata = find_metadata_for_document(document)
+    category_name = document.category.name if document.category else "미분류"
+    created_at = document.created_at.strftime("%Y-%m-%d %H:%M") if document.created_at else "알 수 없음"
+
+    if metadata:
+        source = metadata.get("source", "")
+        if source == "web":
+            return {
+                "label": "웹 크롤링",
+                "origin": metadata.get("url", "알 수 없음"),
+                "detail": "웹 페이지에서 HTML 표 또는 본문을 추출해 저장한 데이터입니다.",
+                "category": category_name,
+                "saved_at": created_at,
+                "processed_file": metadata.get("processed_file", ""),
+            }
+        if source == "kaggle":
+            dataset_id = metadata.get("dataset_id", "")
+            return {
+                "label": "Kaggle 데이터셋",
+                "origin": metadata.get("url") or f"https://www.kaggle.com/datasets/{dataset_id}",
+                "detail": f"{dataset_id} 데이터셋을 다운로드하고 CSV 전처리 후 저장한 데이터입니다.",
+                "category": category_name,
+                "saved_at": created_at,
+                "processed_file": metadata.get("processed_file", ""),
+            }
+
+    if document.title.endswith("_processed.csv"):
+        dataset_id = document.title.removesuffix("_processed.csv").replace("__", "/")
+        return {
+            "label": "Kaggle 데이터셋",
+            "origin": f"https://www.kaggle.com/datasets/{dataset_id}",
+            "detail": f"{dataset_id} 데이터셋을 전처리해 저장한 CSV입니다.",
+            "category": category_name,
+            "saved_at": created_at,
+            "processed_file": "",
+        }
+
+    return {
+        "label": "직접 업로드",
+        "origin": document.title,
+        "detail": "사용자가 업로드한 파일을 DB에 저장하고 VectorDB에 색인한 데이터입니다.",
+        "category": category_name,
+        "saved_at": created_at,
+        "processed_file": "",
     }
 
 
@@ -1190,6 +1273,7 @@ def analysis_select_page(
             pipeline_stats=build_pipeline_stats(documents, categories),
             csv_documents=csv_documents,
             selected_document=selected_document,
+            source_info=build_document_source_info(selected_document),
         ),
     )
 

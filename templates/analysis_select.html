@@ -1,7 +1,7 @@
 {% extends "dashboard_base.html" %}
 
 {% block styles %}
-<link rel="stylesheet" href="/static/eda.css" />
+<link rel="stylesheet" href="/static/eda.css?v=20260630-source-ui" />
 {% endblock %}
 
 {% block content %}
@@ -18,6 +18,44 @@
     {% endif %}
 
     {% if selected_document and not error %}
+    <section class="data-source-panel" aria-label="데이터 출처">
+      <div class="data-source-summary">
+        <span>Data Source</span>
+        <h3>데이터 출처</h3>
+        <p>{{ source_info.detail }}</p>
+      </div>
+      <div class="data-source-meta">
+        <article>
+          <span>수집 방식</span>
+          <strong>{{ source_info.label }}</strong>
+        </article>
+        <article>
+          <span>카테고리</span>
+          <strong>{{ source_info.category }}</strong>
+        </article>
+        <article>
+          <span>저장 시각</span>
+          <strong>{{ source_info.saved_at }}</strong>
+        </article>
+      </div>
+      <div class="data-source-paths">
+        <div>
+          <span>원본 출처</span>
+          {% if source_info.origin and source_info.origin.startswith("http") %}
+          <a href="{{ source_info.origin }}" target="_blank" rel="noopener noreferrer">{{ source_info.origin }}</a>
+          {% else %}
+          <p>{{ source_info.origin }}</p>
+          {% endif %}
+        </div>
+        {% if source_info.processed_file %}
+        <div>
+          <span>처리 파일</span>
+          <p>{{ source_info.processed_file }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
     <section class="analysis-choice-grid" aria-label="분석 페이지 선택">
       <a class="analysis-choice-card" href="/preprocess/{{ selected_document.id }}?username={{ username }}">
         <span>Preprocessing</span>

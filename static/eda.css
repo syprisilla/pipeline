@@ -211,6 +211,114 @@
   gap: 18px;
 }
 
+.data-source-panel {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 24px;
+  padding: 24px;
+  border: 1px solid #d8e1ef;
+  border-radius: var(--eda-radius);
+  background: #fbfdff;
+}
+
+.data-source-summary {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.data-source-summary span,
+.data-source-meta span,
+.data-source-paths span {
+  display: block;
+  color: var(--eda-primary);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.data-source-summary h3 {
+  margin: 0;
+  color: var(--eda-text);
+  font-size: 22px;
+}
+
+.data-source-summary p {
+  margin: 0;
+  color: #526179;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.data-source-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+}
+
+.data-source-meta article {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #e3e9f3;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.data-source-meta span {
+  margin-bottom: 6px;
+  color: var(--eda-muted);
+  font-size: 11px;
+}
+
+.data-source-meta strong {
+  display: block;
+  color: var(--eda-text);
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.data-source-paths {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.data-source-paths div {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.data-source-paths span {
+  margin-bottom: 8px;
+  color: var(--eda-muted);
+  font-size: 11px;
+}
+
+.data-source-paths a,
+.data-source-paths p {
+  margin: 0;
+  color: var(--eda-primary-dark);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.data-source-paths a {
+  text-decoration: none;
+}
+
+.data-source-paths a:hover {
+  text-decoration: underline;
+}
+
 .analysis-choice-card {
   min-height: 260px;
   padding: 28px;
@@ -704,6 +812,7 @@
   .eda-metrics,
   .csv-file-grid,
   .analysis-choice-grid,
+  .data-source-meta,
   .csv-overview-card,
   .ml-explain-card,
   .ml-summary-grid,
@@ -723,6 +832,7 @@
     grid-template-columns: 1fr;
     gap: 4px;
   }
+
 
   .ml-target-row {
     grid-template-columns: 1fr;
